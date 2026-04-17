@@ -17,17 +17,17 @@ var CSS_ANIM = "@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}@keyframes sl
 
 /* ═══ TEAMS ═══ */
 var TI = {
-  "G2 Esports": { s: "G2", c: "#aaa" },
-  "SK Gaming": { s: "SK", c: "#0088cc" },
-  "Heretics": { s: "TH", c: "#ff4655" },
-  "NaVi": { s: "NAVI", c: "#ffd700" },
-  "GIANTX": { s: "GX", c: "#00c8ff" },
-  "Fnatic": { s: "FNC", c: "#ff5900" },
-  "Shifters": { s: "SHFT", c: "#6c5ce7" },
-  "Vitality": { s: "VIT", c: "#fee800" },
-  "KCorp": { s: "KC", c: "#4a90d9" },
-  "KOI": { s: "KOI", c: "#00a6ff" },
-  "Los Ratones": { s: "LR", c: "#c87533" },
+  "G2 Esports": { s: "G2", c: "#aaa", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2FG2-FullonDark.png" },
+  "SK Gaming": { s: "SK", c: "#0088cc", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2FSK-FullonDark.png" },
+  "Heretics": { s: "TH", c: "#ff4655", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1734691655498_THfullcolorfordarkbg.png" },
+  "NaVi": { s: "NAVI", c: "#ffd700", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1718748058515_NAVIfullcolorfordarkbg.png" },
+  "GIANTX": { s: "GX", c: "#00c8ff", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1704449841778_GIANTXLogo2024.png" },
+  "Fnatic": { s: "FNC", c: "#ff5900", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1631819523879_fnc-2021-worlds.png" },
+  "Shifters": { s: "SHFT", c: "#6c5ce7", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1765897071435_600px-Shifters_allmode.png" },
+  "Vitality": { s: "VIT", c: "#fee800", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1709743120866_VITfullcolorfordarkbg.png" },
+  "KCorp": { s: "KC", c: "#4a90d9", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1688383768498_KCfullcolorfordarkbg.png" },
+  "KOI": { s: "KOI", c: "#00a6ff", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1734012609283_MKOI_FullColor_Blue.png" },
+  "Los Ratones": { s: "LR", c: "#c87533", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1733315498494_LRfullcolorfordarkbg.png" },
 };
 
 /* ═══ PLAYERS ═══ */
@@ -382,7 +382,24 @@ function getAvailCStyles(ids) {
 function TeamLogo(props) {
   var t = props.team;
   var sz = props.size || 30;
-  var info = TI[t] || { s: "??", c: "#555" };
+  var info = TI[t] || { s: "??", c: "#555", logo: null };
+  var err = useState(false);
+  var hasError = err[0];
+  var setError = err[1];
+
+  if (info.logo && !hasError) {
+    return (
+      <div style={{ width: sz, height: sz, borderRadius: 8, background: info.c + "10", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+        <img
+          src={info.logo}
+          alt={info.s}
+          onError={function() { setError(true); }}
+          style={{ width: sz - 4, height: sz - 4, objectFit: "contain" }}
+        />
+      </div>
+    );
+  }
+
   return (
     <div style={{ width: sz, height: sz, borderRadius: 8, background: info.c + "15", border: "1px solid " + info.c + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: Math.max(sz * 0.28, 8), fontWeight: 800, color: info.c, flexShrink: 0, fontFamily: FD }}>
       {info.s}
