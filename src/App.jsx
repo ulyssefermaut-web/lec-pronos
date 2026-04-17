@@ -1,160 +1,463 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState } from "react";
 
-/* ── Theme ── */
-const BG = "#0a0a0f";
-const S1 = "#111118";
-const S2 = "#1a1a26";
-const BD = "#252535";
-const TP = "#e4e4ee";
-const TD = "#5a5a72";
-const AC = "#c8aa2a";
-const FD = "'Chakra Petch', sans-serif";
-const FB = "'DM Sans', sans-serif";
+/* ═══ THEME ═══ */
+var BG = "#06060e";
+var S1 = "#0c0c1a";
+var S2 = "#131328";
+var BD = "#1e1e3a";
+var TP = "#e8e8f8";
+var TD = "#6a6a8a";
+var N1 = "#00f0ff";
+var N2 = "#a855f7";
+var N3 = "#f43f5e";
+var NG = "#22d3ee";
+var FD = "'Chakra Petch', sans-serif";
+var FB = "'DM Sans', sans-serif";
+var CSS_ANIM = "@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}@keyframes slideUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}body{margin:0;background:#06060e}";
 
-/* ── Teams ── */
-const TEAM_INFO = {
-  "G2 Esports": { short: "G2", color: "#aaa" },
-  "SK Gaming": { short: "SK", color: "#0088cc" },
-  "Heretics": { short: "TH", color: "#ff4655" },
-  "NaVi": { short: "NAVI", color: "#ffd700" },
-  "GIANTX": { short: "GX", color: "#00c8ff" },
-  "Fnatic": { short: "FNC", color: "#ff5900" },
-  "Shifters": { short: "SHFT", color: "#6c5ce7" },
-  "Vitality": { short: "VIT", color: "#fee800" },
-  "KCorp": { short: "KC", color: "#4a90d9" },
-  "KOI": { short: "KOI", color: "#00a6ff" },
-  "Los Ratones": { short: "LR", color: "#c87533" },
+/* ═══ TEAMS ═══ */
+var TI = {
+  "G2 Esports": { s: "G2", c: "#aaa" },
+  "SK Gaming": { s: "SK", c: "#0088cc" },
+  "Heretics": { s: "TH", c: "#ff4655" },
+  "NaVi": { s: "NAVI", c: "#ffd700" },
+  "GIANTX": { s: "GX", c: "#00c8ff" },
+  "Fnatic": { s: "FNC", c: "#ff5900" },
+  "Shifters": { s: "SHFT", c: "#6c5ce7" },
+  "Vitality": { s: "VIT", c: "#fee800" },
+  "KCorp": { s: "KC", c: "#4a90d9" },
+  "KOI": { s: "KOI", c: "#00a6ff" },
+  "Los Ratones": { s: "LR", c: "#c87533" },
 };
 
-/* ── Players ── */
-const AVATARS = ["🦁","⚔️","🐉","🏰","🎯","🔥","💎","🌟","🐺","🦅","🎮","👑","⚡","🛡️","🗡️","🏆","🎪","🦊","🐍","🦈","🌙","☄️","🎲","🃏","🧙","🤖","👹","🐲"];
-const COLORS = ["#e8364f","#3b82f6","#10b981","#f59e0b","#a855f7","#ec4899","#06b6d4","#84cc16","#f97316","#6366f1","#14b8a6","#e11d48"];
+/* ═══ PLAYERS ═══ */
+var AVATARS = ["🦁","⚔️","🐉","🏰","🎯","🔥","💎","🌟","🐺","🦅","🎮","👑","⚡","🛡️","🗡️","🦊","🐍","🦈","🌙","🎲","🃏","🧙","🤖","👹","🐲","🎪"];
+var PCOLORS = ["#e8364f","#3b82f6","#10b981","#f59e0b","#a855f7","#ec4899","#06b6d4","#84cc16","#f97316","#6366f1","#14b8a6","#e11d48"];
 
-const INIT_PLAYERS = [
-  { name: "Ulysse", color: "#e8364f", emoji: "🦁", pin: "1111", badge: null },
-  { name: "César", color: "#3b82f6", emoji: "⚔️", pin: "2222", badge: null },
-  { name: "Emilien", color: "#10b981", emoji: "🐉", pin: "3333", badge: null },
-  { name: "Arthur", color: "#f59e0b", emoji: "🏰", pin: "4444", badge: null },
+/* Exclusive avatars unlocked by achievements */
+var EX_AVATARS = [
+  { emoji: "🏆", req: "wins_250" },
+  { emoji: "☄️", req: "streak_15" },
+  { emoji: "🌌", req: "perfects_25" },
+  { emoji: "💀", req: "leg_wins" },
+  { emoji: "👁️", req: "wr85" },
+  { emoji: "🎭", req: "upsets_25" },
 ];
 
-/* ── Scores ── */
-const SC3 = ["2-0", "2-1", "0-2", "1-2"];
-const SC5 = ["3-0", "3-1", "3-2", "0-3", "1-3", "2-3"];
-
-/* ── Match Data ── */
-const INIT_MATCHES = [
-  { id: 1, week: 1, day: "SAM 28/03", team1: "GIANTX", team2: "Fnatic", bo: 3, cote1: 1.5, cote2: 2.4, winner: "GIANTX", score: "2-1", preds: { Ulysse: { winner: "GIANTX", score: "2-1" }, "César": { winner: "GIANTX", score: "2-1" }, Emilien: { winner: "Fnatic", score: "0-2" }, Arthur: { winner: "Fnatic", score: "1-2" } } },
-  { id: 2, week: 1, day: "SAM 28/03", team1: "KCorp", team2: "Vitality", bo: 3, cote1: 1.2, cote2: 3.7, winner: "KCorp", score: "2-1", preds: { Ulysse: { winner: "KCorp", score: "2-0" }, "César": { winner: "KCorp", score: "2-0" }, Emilien: { winner: "KCorp", score: "2-0" }, Arthur: { winner: "KCorp", score: "2-1" } } },
-  { id: 3, week: 1, day: "SAM 28/03", team1: "NaVi", team2: "KOI", bo: 3, cote1: 3, cote2: 1.4, winner: "NaVi", score: "2-1", preds: { Ulysse: { winner: "KOI", score: "1-2" }, "César": { winner: "NaVi", score: "2-1" }, Emilien: { winner: "KOI", score: "0-2" }, Arthur: { winner: "KOI", score: "1-2" } } },
-  { id: 4, week: 1, day: "DIM 29/03", team1: "SK Gaming", team2: "Heretics", bo: 3, cote1: 2.7, cote2: 1.4, winner: "Heretics", score: "1-2", preds: { Ulysse: { winner: "Heretics", score: "1-2" }, "César": { winner: "SK Gaming", score: "2-1" }, Emilien: { winner: "SK Gaming", score: "2-0" }, Arthur: { winner: "Heretics", score: "0-2" } } },
-  { id: 5, week: 1, day: "DIM 29/03", team1: "KOI", team2: "Fnatic", bo: 3, cote1: 1.3, cote2: 3.3, winner: "KOI", score: "2-0", preds: { Ulysse: { winner: "KOI", score: "2-0" }, "César": { winner: "KOI", score: "2-1" }, Emilien: { winner: "KOI", score: "2-1" }, Arthur: { winner: "KOI", score: "2-1" } } },
-  { id: 6, week: 1, day: "LUN 30/03", team1: "NaVi", team2: "SK Gaming", bo: 3, cote1: 1.2, cote2: 3.9, winner: "NaVi", score: "2-1", preds: { Ulysse: { winner: "NaVi", score: "2-0" }, "César": { winner: "SK Gaming", score: "1-2" }, Emilien: { winner: "NaVi", score: "2-1" }, Arthur: { winner: "NaVi", score: "2-0" } } },
-  { id: 7, week: 1, day: "LUN 30/03", team1: "Heretics", team2: "Vitality", bo: 3, cote1: 2.4, cote2: 1.5, winner: "Vitality", score: "0-2", preds: { Ulysse: { winner: "Vitality", score: "0-2" }, "César": { winner: "Vitality", score: "0-2" }, Emilien: { winner: "Vitality", score: "0-2" }, Arthur: { winner: "Vitality", score: "0-2" } } },
-  { id: 8, week: 2, day: "SAM 04/04", team1: "SK Gaming", team2: "Shifters", bo: 3, cote1: 2.1, cote2: 1.6, winner: "SK Gaming", score: "2-0", preds: { Ulysse: { winner: "SK Gaming", score: "2-0" }, "César": { winner: "Shifters", score: "1-2" }, Emilien: { winner: "Shifters", score: "1-2" }, Arthur: { winner: "Shifters", score: "1-2" } } },
-  { id: 9, week: 2, day: "SAM 04/04", team1: "G2 Esports", team2: "Heretics", bo: 3, cote1: 1.1, cote2: 7, winner: "G2 Esports", score: "2-0", preds: { Ulysse: { winner: "G2 Esports", score: "2-0" }, "César": { winner: "G2 Esports", score: "2-0" }, Emilien: { winner: "G2 Esports", score: "2-0" }, Arthur: { winner: "G2 Esports", score: "2-0" } } },
-  { id: 10, week: 2, day: "SAM 04/04", team1: "NaVi", team2: "Vitality", bo: 3, cote1: 2, cote2: 1.7, winner: "Vitality", score: "0-2", preds: { Ulysse: { winner: "Vitality", score: "1-2" }, "César": { winner: "NaVi", score: "2-1" }, Emilien: { winner: "NaVi", score: "2-1" }, Arthur: { winner: "Vitality", score: "1-2" } } },
-  { id: 11, week: 2, day: "DIM 05/04", team1: "SK Gaming", team2: "GIANTX", bo: 3, cote1: 5, cote2: 1.2, winner: "GIANTX", score: "0-2", preds: { Ulysse: { winner: "GIANTX", score: "1-2" }, "César": { winner: "GIANTX", score: "0-2" }, Emilien: { winner: "GIANTX", score: "1-2" }, Arthur: { winner: "SK Gaming", score: "2-0" } } },
-  { id: 12, week: 2, day: "DIM 05/04", team1: "Fnatic", team2: "G2 Esports", bo: 3, cote1: 6.3, cote2: 1.2, winner: "Fnatic", score: "2-1", preds: { Ulysse: { winner: "G2 Esports", score: "0-2" }, "César": { winner: "G2 Esports", score: "0-2" }, Emilien: { winner: "G2 Esports", score: "0-2" }, Arthur: { winner: "G2 Esports", score: "0-2" } } },
-  { id: 13, week: 2, day: "LUN 06/04", team1: "GIANTX", team2: "Heretics", bo: 3, cote1: 1.3, cote2: 3.3, winner: "GIANTX", score: "2-1", preds: { Ulysse: { winner: "GIANTX", score: "2-1" }, "César": { winner: "GIANTX", score: "2-1" }, Emilien: { winner: "GIANTX", score: "2-1" }, Arthur: { winner: "Heretics", score: "1-2" } } },
-  { id: 14, week: 2, day: "LUN 06/04", team1: "Vitality", team2: "KOI", bo: 3, cote1: 2.7, cote2: 1.4, winner: "Vitality", score: "2-1", preds: { Ulysse: { winner: "Vitality", score: "2-1" }, "César": { winner: "Vitality", score: "2-1" }, Emilien: { winner: "KOI", score: "1-2" }, Arthur: { winner: "Vitality", score: "2-1" } } },
-  { id: 15, week: 3, day: "SAM 11/04", team1: "Heretics", team2: "NaVi", bo: 3, cote1: 2.8, cote2: 1.4, winner: null, score: null, preds: { Ulysse: { winner: "NaVi", score: "1-2" }, "César": { winner: null, score: null }, Emilien: { winner: "NaVi", score: "0-2" }, Arthur: { winner: null, score: null } } },
-  { id: 16, week: 3, day: "SAM 11/04", team1: "G2 Esports", team2: "Vitality", bo: 3, cote1: 1.3, cote2: 3.5, winner: null, score: null, preds: { Ulysse: { winner: "G2 Esports", score: "2-1" }, "César": { winner: null, score: null }, Emilien: { winner: "G2 Esports", score: "2-1" }, Arthur: { winner: null, score: null } } },
-  { id: 17, week: 3, day: "SAM 11/04", team1: "KOI", team2: "SK Gaming", bo: 3, cote1: 1.2, cote2: 4.5, winner: null, score: null, preds: { Ulysse: { winner: "KOI", score: "2-0" }, "César": { winner: null, score: null }, Emilien: { winner: "KOI", score: "2-1" }, Arthur: { winner: null, score: null } } },
-  { id: 18, week: 3, day: "DIM 12/04", team1: "Vitality", team2: "Shifters", bo: 3, cote1: 1.2, cote2: 4.5, winner: null, score: null, preds: { Ulysse: { winner: "Vitality", score: "2-0" }, "César": { winner: null, score: null }, Emilien: { winner: "Vitality", score: "2-1" }, Arthur: { winner: null, score: null } } },
-  { id: 19, week: 3, day: "DIM 12/04", team1: "Heretics", team2: "KCorp", bo: 3, cote1: 4.7, cote2: 1.2, winner: null, score: null, preds: { Ulysse: { winner: "KCorp", score: "0-2" }, "César": { winner: null, score: null }, Emilien: { winner: "KCorp", score: "0-2" }, Arthur: { winner: null, score: null } } },
-  { id: 20, week: 3, day: "LUN 13/04", team1: "Fnatic", team2: "SK Gaming", bo: 3, cote1: 1.3, cote2: 3.4, winner: null, score: null, preds: {} },
-  { id: 21, week: 3, day: "LUN 13/04", team1: "GIANTX", team2: "Shifters", bo: 3, cote1: 1.1, cote2: 6, winner: null, score: null, preds: {} },
+/* Ornaments (avatar frames) */
+var ORNAMENTS = [
+  { id: "none", name: "Aucun", req: null, color: null },
+  { id: "bronze", name: "Bronze", req: "rank_bronze1", color: "#cd7f32", style: "solid" },
+  { id: "silver", name: "Silver", req: "rank_silver1", color: "#c0c0c0", style: "solid" },
+  { id: "gold", name: "Gold", req: "rank_gold1", color: "#ffd700", style: "solid" },
+  { id: "plat", name: "Platinum", req: "rank_plat1", color: "#00f0ff", style: "double" },
+  { id: "diamond", name: "Diamond", req: "rank_dia1", color: "#a855f7", style: "double" },
+  { id: "master", name: "Master", req: "rank_master1", color: "#f43f5e", style: "double" },
+  { id: "chall", name: "Challenger", req: "rank_chall1", color: "#ff6b35", style: "glow" },
+  { id: "flame", name: "Flammes", req: "streak_15", color: "#ff6b35", style: "glow" },
+  { id: "cosmic", name: "Cosmique", req: "perfects_25", color: "#a855f7", style: "glow" },
 ];
 
-/* ── Achievements ── */
-const ACHIEVE = [
-  { id: "w1", icon: "⭐", name: "Premiere victoire", desc: "1 prono gagne", ck: "wins", min: 1 },
-  { id: "w5", icon: "🎯", name: "Sniper", desc: "5 pronos gagnes", ck: "wins", min: 5 },
-  { id: "w10", icon: "🏹", name: "Archer", desc: "10 pronos gagnes", ck: "wins", min: 10 },
-  { id: "p1", icon: "✨", name: "Etoile filante", desc: "1 score parfait", ck: "perfects", min: 1 },
-  { id: "p3", icon: "💫", name: "Devin", desc: "3 scores parfaits", ck: "perfects", min: 3 },
-  { id: "p5", icon: "🔮", name: "Oracle", desc: "5 scores parfaits", ck: "perfects", min: 5 },
-  { id: "s3", icon: "🔥", name: "En feu", desc: "3 de suite", ck: "maxStreak", min: 3 },
-  { id: "s5", icon: "💥", name: "Inarretable", desc: "5 de suite", ck: "maxStreak", min: 5 },
-  { id: "u1", icon: "🎲", name: "Risk taker", desc: "1 upset predit", ck: "upsets", min: 1 },
-  { id: "u3", icon: "🃏", name: "Upset King", desc: "3 upsets", ck: "upsets", min: 3 },
-  { id: "t20", icon: "💰", name: "Bankeur", desc: "20 points", ck: "total", min: 20 },
-  { id: "t50", icon: "👑", name: "Roi du prono", desc: "50 points", ck: "total", min: 50 },
+/* Color name styles */
+var CSTYLES = [
+  { id: "solid", name: "Classique", req: null },
+  { id: "neon", name: "Neon", req: "rank_gold1", grad: "linear-gradient(90deg, #00f0ff, #a855f7)" },
+  { id: "fire", name: "Flamme", req: "rank_plat1", grad: "linear-gradient(90deg, #f97316, #ef4444, #dc2626)" },
+  { id: "gold", name: "Or", req: "rank_master1", grad: "linear-gradient(90deg, #fbbf24, #f59e0b, #eab308)" },
+  { id: "rainbow", name: "Arc-en-ciel", req: "upsets_25", grad: "linear-gradient(90deg, #f43f5e, #f97316, #eab308, #10b981, #3b82f6, #a855f7)" },
+  { id: "void", name: "Void", req: "rank_chall1", grad: "linear-gradient(90deg, #6366f1, #a855f7, #ec4899, #a855f7, #6366f1)" },
+];
+var SC3 = ["2-0","2-1","0-2","1-2"];
+var SC5 = ["3-0","3-1","3-2","0-3","1-3","2-3"];
+
+var INIT_P = [
+  { name: "Ulysse", color: "#e8364f", emoji: "🦁", pin: "1111", title: null, ornament: "none", cstyle: "solid" },
+  { name: "César", color: "#3b82f6", emoji: "⚔️", pin: "2222", title: null, ornament: "none", cstyle: "solid" },
+  { name: "Emilien", color: "#10b981", emoji: "🐉", pin: "3333", title: null, ornament: "none", cstyle: "solid" },
+  { name: "Arthur", color: "#f59e0b", emoji: "🏰", pin: "4444", title: null, ornament: "none", cstyle: "solid" },
 ];
 
-/* ── Utils ── */
-function pts(m, pr) {
+/* ═══ MATCHES ═══ */
+var INIT_M = [
+  {id:1,week:1,day:"SAM 28/03",team1:"GIANTX",team2:"Fnatic",bo:3,cote1:1.5,cote2:2.4,winner:"GIANTX",score:"2-1",preds:{Ulysse:{winner:"GIANTX",score:"2-1"},"César":{winner:"GIANTX",score:"2-1"},Emilien:{winner:"Fnatic",score:"0-2"},Arthur:{winner:"Fnatic",score:"1-2"}}},
+  {id:2,week:1,day:"SAM 28/03",team1:"KCorp",team2:"Vitality",bo:3,cote1:1.2,cote2:3.7,winner:"KCorp",score:"2-1",preds:{Ulysse:{winner:"KCorp",score:"2-0"},"César":{winner:"KCorp",score:"2-0"},Emilien:{winner:"KCorp",score:"2-0"},Arthur:{winner:"KCorp",score:"2-1"}}},
+  {id:3,week:1,day:"SAM 28/03",team1:"NaVi",team2:"KOI",bo:3,cote1:3,cote2:1.4,winner:"NaVi",score:"2-1",preds:{Ulysse:{winner:"KOI",score:"1-2"},"César":{winner:"NaVi",score:"2-1"},Emilien:{winner:"KOI",score:"0-2"},Arthur:{winner:"KOI",score:"1-2"}}},
+  {id:4,week:1,day:"DIM 29/03",team1:"SK Gaming",team2:"Heretics",bo:3,cote1:2.7,cote2:1.4,winner:"Heretics",score:"1-2",preds:{Ulysse:{winner:"Heretics",score:"1-2"},"César":{winner:"SK Gaming",score:"2-1"},Emilien:{winner:"SK Gaming",score:"2-0"},Arthur:{winner:"Heretics",score:"0-2"}}},
+  {id:5,week:1,day:"DIM 29/03",team1:"KOI",team2:"Fnatic",bo:3,cote1:1.3,cote2:3.3,winner:"KOI",score:"2-0",preds:{Ulysse:{winner:"KOI",score:"2-0"},"César":{winner:"KOI",score:"2-1"},Emilien:{winner:"KOI",score:"2-1"},Arthur:{winner:"KOI",score:"2-1"}}},
+  {id:6,week:1,day:"LUN 30/03",team1:"NaVi",team2:"SK Gaming",bo:3,cote1:1.2,cote2:3.9,winner:"NaVi",score:"2-1",preds:{Ulysse:{winner:"NaVi",score:"2-0"},"César":{winner:"SK Gaming",score:"1-2"},Emilien:{winner:"NaVi",score:"2-1"},Arthur:{winner:"NaVi",score:"2-0"}}},
+  {id:7,week:1,day:"LUN 30/03",team1:"Heretics",team2:"Vitality",bo:3,cote1:2.4,cote2:1.5,winner:"Vitality",score:"0-2",preds:{Ulysse:{winner:"Vitality",score:"0-2"},"César":{winner:"Vitality",score:"0-2"},Emilien:{winner:"Vitality",score:"0-2"},Arthur:{winner:"Vitality",score:"0-2"}}},
+  {id:8,week:2,day:"SAM 04/04",team1:"SK Gaming",team2:"Shifters",bo:3,cote1:2.1,cote2:1.6,winner:"SK Gaming",score:"2-0",preds:{Ulysse:{winner:"SK Gaming",score:"2-0"},"César":{winner:"Shifters",score:"1-2"},Emilien:{winner:"Shifters",score:"1-2"},Arthur:{winner:"Shifters",score:"1-2"}}},
+  {id:9,week:2,day:"SAM 04/04",team1:"G2 Esports",team2:"Heretics",bo:3,cote1:1.1,cote2:7,winner:"G2 Esports",score:"2-0",preds:{Ulysse:{winner:"G2 Esports",score:"2-0"},"César":{winner:"G2 Esports",score:"2-0"},Emilien:{winner:"G2 Esports",score:"2-0"},Arthur:{winner:"G2 Esports",score:"2-0"}}},
+  {id:10,week:2,day:"SAM 04/04",team1:"NaVi",team2:"Vitality",bo:3,cote1:2,cote2:1.7,winner:"Vitality",score:"0-2",preds:{Ulysse:{winner:"Vitality",score:"1-2"},"César":{winner:"NaVi",score:"2-1"},Emilien:{winner:"NaVi",score:"2-1"},Arthur:{winner:"Vitality",score:"1-2"}}},
+  {id:11,week:2,day:"DIM 05/04",team1:"SK Gaming",team2:"GIANTX",bo:3,cote1:5,cote2:1.2,winner:"GIANTX",score:"0-2",preds:{Ulysse:{winner:"GIANTX",score:"1-2"},"César":{winner:"GIANTX",score:"0-2"},Emilien:{winner:"GIANTX",score:"1-2"},Arthur:{winner:"SK Gaming",score:"2-0"}}},
+  {id:12,week:2,day:"DIM 05/04",team1:"Fnatic",team2:"G2 Esports",bo:3,cote1:6.3,cote2:1.2,winner:"Fnatic",score:"2-1",preds:{Ulysse:{winner:"G2 Esports",score:"0-2"},"César":{winner:"G2 Esports",score:"0-2"},Emilien:{winner:"G2 Esports",score:"0-2"},Arthur:{winner:"G2 Esports",score:"0-2"}}},
+  {id:13,week:2,day:"LUN 06/04",team1:"GIANTX",team2:"Heretics",bo:3,cote1:1.3,cote2:3.3,winner:"GIANTX",score:"2-1",preds:{Ulysse:{winner:"GIANTX",score:"2-1"},"César":{winner:"GIANTX",score:"2-1"},Emilien:{winner:"GIANTX",score:"2-1"},Arthur:{winner:"Heretics",score:"1-2"}}},
+  {id:14,week:2,day:"LUN 06/04",team1:"Vitality",team2:"KOI",bo:3,cote1:2.7,cote2:1.4,winner:"Vitality",score:"2-1",preds:{Ulysse:{winner:"Vitality",score:"2-1"},"César":{winner:"Vitality",score:"2-1"},Emilien:{winner:"KOI",score:"1-2"},Arthur:{winner:"Vitality",score:"2-1"}}},
+  {id:15,week:3,day:"SAM 11/04",team1:"Heretics",team2:"NaVi",bo:3,cote1:2.8,cote2:1.4,winner:null,score:null,preds:{Ulysse:{winner:"NaVi",score:"1-2"},"César":{winner:null,score:null},Emilien:{winner:"NaVi",score:"0-2"},Arthur:{winner:null,score:null}}},
+  {id:16,week:3,day:"SAM 11/04",team1:"G2 Esports",team2:"Vitality",bo:3,cote1:1.3,cote2:3.5,winner:null,score:null,preds:{Ulysse:{winner:"G2 Esports",score:"2-1"},"César":{winner:null,score:null},Emilien:{winner:"G2 Esports",score:"2-1"},Arthur:{winner:null,score:null}}},
+  {id:17,week:3,day:"SAM 11/04",team1:"KOI",team2:"SK Gaming",bo:3,cote1:1.2,cote2:4.5,winner:null,score:null,preds:{Ulysse:{winner:"KOI",score:"2-0"},"César":{winner:null,score:null},Emilien:{winner:"KOI",score:"2-1"},Arthur:{winner:null,score:null}}},
+  {id:18,week:3,day:"DIM 12/04",team1:"Vitality",team2:"Shifters",bo:3,cote1:1.2,cote2:4.5,winner:null,score:null,preds:{Ulysse:{winner:"Vitality",score:"2-0"},"César":{winner:null,score:null},Emilien:{winner:"Vitality",score:"2-1"},Arthur:{winner:null,score:null}}},
+  {id:19,week:3,day:"DIM 12/04",team1:"Heretics",team2:"KCorp",bo:3,cote1:4.7,cote2:1.2,winner:null,score:null,preds:{Ulysse:{winner:"KCorp",score:"0-2"},"César":{winner:null,score:null},Emilien:{winner:"KCorp",score:"0-2"},Arthur:{winner:null,score:null}}},
+  {id:20,week:3,day:"LUN 13/04",team1:"Fnatic",team2:"SK Gaming",bo:3,cote1:1.3,cote2:3.4,winner:null,score:null,preds:{}},
+  {id:21,week:3,day:"LUN 13/04",team1:"GIANTX",team2:"Shifters",bo:3,cote1:1.1,cote2:6,winner:null,score:null,preds:{}},
+];
+
+/* ═══ 28 RANKS (7 tiers x 4 divisions) ═══ */
+var TIERS = [
+  { n: "Bronze", c: "#cd7f32", base: 0 },
+  { n: "Silver", c: "#c0c0c0", base: 50 },
+  { n: "Gold", c: "#ffd700", base: 150 },
+  { n: "Platinum", c: "#00f0ff", base: 350 },
+  { n: "Diamond", c: "#a855f7", base: 700 },
+  { n: "Master", c: "#f43f5e", base: 1300 },
+  { n: "Challenger", c: "#ff6b35", base: 2500 },
+];
+
+var RANKS = [];
+(function() {
+  for (var t = 0; t < TIERS.length; t++) {
+    var tier = TIERS[t];
+    var nb = t < TIERS.length - 1 ? TIERS[t + 1].base : tier.base + 3000;
+    var step = (nb - tier.base) / 4;
+    for (var d = 4; d >= 1; d--) {
+      var divLabel = d === 4 ? "IV" : d === 3 ? "III" : d === 2 ? "II" : "I";
+      RANKS.push({
+        tier: tier.n, div: d, color: tier.c,
+        xp: Math.round(tier.base + (4 - d) * step),
+        label: tier.n + " " + divLabel,
+      });
+    }
+  }
+})();
+
+function getRank(xp) {
+  var cur = RANKS[0];
+  var idx = 0;
+  for (var i = 0; i < RANKS.length; i++) {
+    if (xp >= RANKS[i].xp) { cur = RANKS[i]; idx = i; }
+  }
+  var nx = idx < RANKS.length - 1 ? RANKS[idx + 1] : null;
+  var prog = nx ? Math.min((xp - cur.xp) / (nx.xp - cur.xp), 1) : 1;
+  return { rank: cur, next: nx, progress: prog, xp: xp, idx: idx };
+}
+
+/* ═══ TITLES ═══ */
+var TITLES = [
+  { id: null, name: "Aucun" },
+  { id: "rookie", name: "Rookie", req: "first_win" },
+  { id: "sniper", name: "Le Sniper", req: "wins_25" },
+  { id: "veteran", name: "Le Veteran", req: "games_50" },
+  { id: "devin", name: "Le Devin", req: "perfects_10" },
+  { id: "oracle", name: "L'Oracle", req: "perfects_25" },
+  { id: "risk", name: "Le Risk Taker", req: "upsets_10" },
+  { id: "chaos", name: "Chaos Master", req: "upsets_25" },
+  { id: "analyste", name: "L'Analyste", req: "wr70" },
+  { id: "prodige", name: "Le Prodige", req: "wr85" },
+  { id: "inarretable", name: "L'Inarretable", req: "streak_10" },
+  { id: "immortel", name: "L'Immortel", req: "streak_15" },
+  { id: "kcfan", name: "Fan Karmine", req: "kc_master" },
+  { id: "perfectday", name: "Le Perfectionniste", req: "perfect_day" },
+  { id: "goat", name: "Le GOAT", req: "wins_250" },
+];
+
+/* ═══ 40 ACHIEVEMENTS ═══ */
+var ACH_CATS = [
+  { id: "prog", name: "Progression", color: N1 },
+  { id: "prec", name: "Precision", color: "#FFD700" },
+  { id: "risk", name: "Risque", color: N3 },
+  { id: "streak", name: "Series", color: "#f97316" },
+  { id: "team", name: "Equipes", color: NG },
+  { id: "meta", name: "Meta", color: N2 },
+  { id: "legend", name: "Legende", color: "#ff6b35" },
+];
+
+var ACHS = [
+  /* PROGRESSION */
+  { id:"first_win",cat:"prog",icon:"⭐",name:"Premiere victoire",desc:"Gagne 1 prono",xp:10,title:"rookie" },
+  { id:"wins_10",cat:"prog",icon:"🎯",name:"10 victoires",desc:"Gagne 10 pronos",xp:20 },
+  { id:"wins_25",cat:"prog",icon:"🏹",name:"Tireur d'elite",desc:"Gagne 25 pronos",xp:40,title:"sniper" },
+  { id:"wins_50",cat:"prog",icon:"💪",name:"Machine",desc:"Gagne 50 pronos",xp:80 },
+  { id:"wins_100",cat:"prog",icon:"🗡️",name:"Centurion",desc:"Gagne 100 pronos",xp:150 },
+  { id:"wins_250",cat:"prog",icon:"🏆",name:"Legende des pronos",desc:"Gagne 250 pronos",xp:400,title:"goat" },
+  { id:"games_25",cat:"prog",icon:"📝",name:"Regulier",desc:"Joue 25 matchs",xp:15 },
+  { id:"games_50",cat:"prog",icon:"📚",name:"Veteran",desc:"Joue 50 matchs",xp:40,title:"veteran" },
+  { id:"games_100",cat:"prog",icon:"🏛️",name:"Pilier",desc:"Joue 100 matchs",xp:80 },
+  { id:"games_200",cat:"prog",icon:"⚱️",name:"Monument",desc:"Joue 200 matchs",xp:200 },
+  { id:"pts_50",cat:"prog",icon:"💵",name:"Premier gain",desc:"Cumule 50 points",xp:20 },
+  { id:"pts_150",cat:"prog",icon:"💰",name:"Bankeur",desc:"Cumule 150 points",xp:50 },
+  { id:"pts_500",cat:"prog",icon:"💎",name:"Millionnaire",desc:"Cumule 500 points",xp:150 },
+  { id:"pts_1000",cat:"prog",icon:"👑",name:"Magnat",desc:"Cumule 1000 points",xp:400 },
+  /* PRECISION */
+  { id:"perf_1",cat:"prec",icon:"✨",name:"Etoile filante",desc:"1 score exact",xp:15 },
+  { id:"perf_5",cat:"prec",icon:"💫",name:"Devin",desc:"5 scores exacts",xp:40 },
+  { id:"perfects_10",cat:"prec",icon:"🔮",name:"Oracle",desc:"10 scores exacts",xp:80,title:"devin" },
+  { id:"perfects_25",cat:"prec",icon:"🌠",name:"Omniscient",desc:"25 scores exacts",xp:200,title:"oracle" },
+  { id:"perfects_50",cat:"prec",icon:"🪐",name:"Dieu du prono",desc:"50 scores exacts",xp:500 },
+  { id:"wr70",cat:"prec",icon:"📊",name:"Analyste",desc:"WR 70%+ (10 matchs min)",xp:50,title:"analyste" },
+  { id:"wr85",cat:"prec",icon:"🧠",name:"Prodige",desc:"WR 85%+ (20 matchs min)",xp:150,title:"prodige" },
+  /* RISQUE */
+  { id:"upset_1",cat:"risk",icon:"🎲",name:"Risk taker",desc:"1 upset (cote 2.5+)",xp:15 },
+  { id:"upset_5",cat:"risk",icon:"🃏",name:"Intuition",desc:"5 upsets",xp:50 },
+  { id:"upsets_10",cat:"risk",icon:"🎪",name:"Upset Master",desc:"10 upsets",xp:120,title:"risk" },
+  { id:"upsets_25",cat:"risk",icon:"🎭",name:"Prince du chaos",desc:"25 upsets",xp:300,title:"chaos" },
+  { id:"huge_upset",cat:"risk",icon:"🚀",name:"L'impossible",desc:"Gagne avec cote 5+",xp:75 },
+  { id:"big_win",cat:"risk",icon:"🎰",name:"Jackpot",desc:"+10 pts en 1 match",xp:50 },
+  { id:"mega_win",cat:"risk",icon:"🤑",name:"Mega Jackpot",desc:"+20 pts en 1 match",xp:150 },
+  /* SERIES */
+  { id:"streak_3",cat:"streak",icon:"🔥",name:"En feu",desc:"3 wins de suite",xp:20 },
+  { id:"streak_5",cat:"streak",icon:"💥",name:"Enchaine",desc:"5 wins de suite",xp:50 },
+  { id:"streak_10",cat:"streak",icon:"🌋",name:"Inarretable",desc:"10 wins de suite",xp:150,title:"inarretable" },
+  { id:"streak_15",cat:"streak",icon:"☄️",name:"Comete",desc:"15 wins de suite",xp:350,title:"immortel" },
+  { id:"streak_20",cat:"streak",icon:"⚡",name:"Foudre divine",desc:"20 wins de suite",xp:700 },
+  /* EQUIPES */
+  { id:"kc_master",cat:"team",icon:"🦁",name:"Fan Karmine",desc:"10 wins sur KCorp",xp:60,title:"kcfan" },
+  { id:"team_spec",cat:"team",icon:"🎯",name:"Specialiste",desc:"20 wins sur 1 equipe",xp:150 },
+  { id:"team_8",cat:"team",icon:"🌈",name:"Cosmopolite",desc:"Gagne sur 8 equipes diff.",xp:100 },
+  { id:"team_all",cat:"team",icon:"🗺️",name:"Expert LEC",desc:"Gagne sur les 10 equipes",xp:250 },
+  /* META */
+  { id:"perfect_day",cat:"meta",icon:"🌞",name:"Journee parfaite",desc:"100% de wins en 1 jour (3+ matchs)",xp:100,title:"perfectday" },
+  { id:"early_bird",cat:"meta",icon:"🐦",name:"Early bird",desc:"Pronostique tous les matchs d'1 semaine",xp:30 },
+  /* LEGENDE */
+  { id:"leg_wins",cat:"legend",icon:"💀",name:"500 victoires",desc:"Gagne 500 pronos",xp:1000,hidden:true },
+  { id:"leg_streak",cat:"legend",icon:"🔥",name:"Chaine incassable",desc:"25 wins de suite",xp:1500,hidden:true },
+  { id:"leg_perf",cat:"legend",icon:"🌌",name:"Voyant cosmique",desc:"100 scores exacts",xp:1500,hidden:true },
+];
+
+/* ═══ UTILS ═══ */
+function calcPts(m, pr) {
   if (!m.winner || !pr || !pr.winner) return 0;
   if (pr.winner !== m.winner) return 0;
   var c = pr.winner === m.team1 ? m.cote1 : m.cote2;
-  if (pr.score === m.score) return c * 2;
-  return c;
+  return pr.score === m.score ? c * 2 : c;
 }
 
 function winOf(t1, t2, sc) {
   if (!sc) return null;
-  var parts = sc.split("-");
-  return Number(parts[0]) > Number(parts[1]) ? t1 : t2;
+  var p = sc.split("-");
+  return Number(p[0]) > Number(p[1]) ? t1 : t2;
 }
 
 function rd(n) { return Math.round(n * 10) / 10; }
 
 function getStats(matches, name) {
   var w = 0, pf = 0, tot = 0, pl = 0, streak = 0, maxS = 0, ups = 0;
+  var bigW = 0, hugeUps = 0;
+  var teams = {};
+  var teamWins = {};
   matches.forEach(function(m) {
     if (!m.winner || !m.preds[name] || !m.preds[name].winner) return;
     pl++;
-    var p = pts(m, m.preds[name]);
+    var p = calcPts(m, m.preds[name]);
     tot += p;
     if (p > 0) {
-      w++;
-      streak++;
+      w++; streak++;
       if (streak > maxS) maxS = streak;
+      if (p > bigW) bigW = p;
       var cw = m.winner === m.team1 ? m.cote1 : m.cote2;
       if (cw >= 2.5) ups++;
+      if (cw >= 5) hugeUps++;
+      teams[m.winner] = true;
+      teamWins[m.winner] = (teamWins[m.winner] || 0) + 1;
     } else {
       streak = 0;
     }
     if (p > 0 && m.preds[name].score === m.score) pf++;
   });
-  return { played: pl, wins: w, perfects: pf, total: rd(tot), wr: pl > 0 ? Math.round(w / pl * 100) : 0, maxStreak: maxS, upsets: ups };
+  var wr = pl > 0 ? Math.round(w / pl * 100) : 0;
+  var maxTW = 0;
+  Object.keys(teamWins).forEach(function(k) {
+    if (teamWins[k] > maxTW) maxTW = teamWins[k];
+  });
+  return {
+    played: pl, wins: w, perfects: pf, total: rd(tot), wr: wr,
+    maxStreak: maxS, upsets: ups, bigWin: bigW,
+    hugeUpsets: hugeUps, diffTeams: Object.keys(teams).length,
+    kcWins: teamWins["KCorp"] || 0, maxTeamWins: maxTW,
+  };
 }
 
-function getUnlocked(stats) {
-  return ACHIEVE.filter(function(a) { return stats[a.ck] >= a.min; });
+function checkAch(a, s) {
+  switch (a.id) {
+    case "first_win": return s.wins >= 1;
+    case "wins_10": return s.wins >= 10;
+    case "wins_25": return s.wins >= 25;
+    case "wins_50": return s.wins >= 50;
+    case "wins_100": return s.wins >= 100;
+    case "wins_250": return s.wins >= 250;
+    case "games_25": return s.played >= 25;
+    case "games_50": return s.played >= 50;
+    case "games_100": return s.played >= 100;
+    case "games_200": return s.played >= 200;
+    case "pts_50": return s.total >= 50;
+    case "pts_150": return s.total >= 150;
+    case "pts_500": return s.total >= 500;
+    case "pts_1000": return s.total >= 1000;
+    case "perf_1": return s.perfects >= 1;
+    case "perf_5": return s.perfects >= 5;
+    case "perfects_10": return s.perfects >= 10;
+    case "perfects_25": return s.perfects >= 25;
+    case "perfects_50": return s.perfects >= 50;
+    case "wr70": return s.played >= 10 && s.wr >= 70;
+    case "wr85": return s.played >= 20 && s.wr >= 85;
+    case "upset_1": return s.upsets >= 1;
+    case "upset_5": return s.upsets >= 5;
+    case "upsets_10": return s.upsets >= 10;
+    case "upsets_25": return s.upsets >= 25;
+    case "huge_upset": return s.hugeUpsets >= 1;
+    case "big_win": return s.bigWin >= 10;
+    case "mega_win": return s.bigWin >= 20;
+    case "streak_3": return s.maxStreak >= 3;
+    case "streak_5": return s.maxStreak >= 5;
+    case "streak_10": return s.maxStreak >= 10;
+    case "streak_15": return s.maxStreak >= 15;
+    case "streak_20": return s.maxStreak >= 20;
+    case "kc_master": return s.kcWins >= 10;
+    case "team_spec": return s.maxTeamWins >= 20;
+    case "team_8": return s.diffTeams >= 8;
+    case "team_all": return s.diffTeams >= 10;
+    case "perfect_day": return false;
+    case "early_bird": return s.played >= 7;
+    case "leg_wins": return s.wins >= 500;
+    case "leg_streak": return s.maxStreak >= 25;
+    case "leg_perf": return s.perfects >= 100;
+    default: return false;
+  }
 }
 
-/* ── Team Logo ── */
+function getUnlocked(s) {
+  return ACHS.filter(function(a) { return checkAch(a, s); });
+}
+
+function getTotalXP(s) {
+  var base = Math.floor(s.total * 2);
+  var bonus = 0;
+  getUnlocked(s).forEach(function(a) { bonus += a.xp; });
+  return base + bonus;
+}
+
+function getAvailTitles(s) {
+  var ids = getUnlocked(s).map(function(a) { return a.id; });
+  return TITLES.filter(function(t) {
+    return !t.req || ids.indexOf(t.req) !== -1;
+  });
+}
+
+/* Get all unlocked IDs (achievements + rank milestones) */
+function getAllIds(s) {
+  var ids = getUnlocked(s).map(function(a) { return a.id; });
+  var xp = getTotalXP(s);
+  var r = getRank(xp);
+  /* Add rank milestone IDs based on rank index */
+  if (r.idx >= 3) ids.push("rank_bronze1");
+  if (r.idx >= 7) ids.push("rank_silver1");
+  if (r.idx >= 11) ids.push("rank_gold1");
+  if (r.idx >= 15) ids.push("rank_plat1");
+  if (r.idx >= 19) ids.push("rank_dia1");
+  if (r.idx >= 23) ids.push("rank_master1");
+  if (r.idx >= 27) ids.push("rank_chall1");
+  return ids;
+}
+
+function getAvailAvatars(ids) {
+  var avail = AVATARS.slice();
+  EX_AVATARS.forEach(function(ea) {
+    if (ids.indexOf(ea.req) !== -1) avail.push(ea.emoji);
+  });
+  return avail;
+}
+
+function getAvailOrnaments(ids) {
+  return ORNAMENTS.filter(function(o) {
+    return !o.req || ids.indexOf(o.req) !== -1;
+  });
+}
+
+function getAvailCStyles(ids) {
+  return CSTYLES.filter(function(cs) {
+    return !cs.req || ids.indexOf(cs.req) !== -1;
+  });
+}
+
+/* ═══ SMALL COMPONENTS ═══ */
 function TeamLogo(props) {
-  var team = props.team;
-  var size = props.size || 30;
-  var info = TEAM_INFO[team] || { short: "??", color: "#555" };
+  var t = props.team;
+  var sz = props.size || 30;
+  var info = TI[t] || { s: "??", c: "#555" };
   return (
-    <div style={{
-      width: size, height: size, borderRadius: 8,
-      background: info.color + "22", border: "1.5px solid " + info.color + "44",
-      display: "flex", alignItems: "center", justifyContent: "center",
-      fontSize: Math.max(size * 0.28, 8), fontWeight: 800, color: info.color,
-      flexShrink: 0, fontFamily: FD, letterSpacing: 0.5
-    }}>
-      {info.short}
+    <div style={{ width: sz, height: sz, borderRadius: 8, background: info.c + "15", border: "1px solid " + info.c + "40", display: "flex", alignItems: "center", justifyContent: "center", fontSize: Math.max(sz * 0.28, 8), fontWeight: 800, color: info.c, flexShrink: 0, fontFamily: FD }}>
+      {info.s}
     </div>
   );
 }
 
-/* ── Login Screen ── */
+function NeonCard(props) {
+  var g = props.glow || N1;
+  return (
+    <div style={{ background: S1, borderRadius: 16, border: "1px solid " + g + "20", boxShadow: "0 0 20px " + g + "08", padding: props.pad || "16px 18px", overflow: "hidden" }}>
+      {props.children}
+    </div>
+  );
+}
+
+function RankBadge(props) {
+  var r = props.rank;
+  return (
+    <span style={{ display: "inline-flex", padding: "2px 8px", borderRadius: 6, fontSize: 9, fontWeight: 700, fontFamily: FD, letterSpacing: 1, background: r.color + "18", border: "1px solid " + r.color + "40", color: r.color }}>
+      {r.label}
+    </span>
+  );
+}
+
+function TitleTag(props) {
+  var tid = props.titleId;
+  if (!tid) return null;
+  var t = TITLES.find(function(x) { return x.id === tid; });
+  if (!t) return null;
+  return (
+    <div style={{ fontSize: 9, fontStyle: "italic", color: N1, fontFamily: FD, marginTop: 1 }}>
+      "{t.name}"
+    </div>
+  );
+}
+
+/* Avatar with ornament frame */
+function PlayerAvatar(props) {
+  var player = props.player;
+  var sz = props.size || 48;
+  var orn = ORNAMENTS.find(function(o) { return o.id === player.ornament; }) || ORNAMENTS[0];
+  var borderW = orn.style === "double" ? 4 : orn.style === "glow" ? 3 : 3;
+  var borderC = orn.color || player.color + "40";
+  var shadow = orn.style === "glow" ? "0 0 12px " + orn.color + "60, 0 0 25px " + orn.color + "30" : orn.color ? "0 0 10px " + orn.color + "25" : "0 0 15px " + player.color + "15";
+  var outline = orn.style === "double" ? "2px solid " + orn.color + "40" : "none";
+  return (
+    <div style={{ width: sz, height: sz, borderRadius: "50%", background: player.color + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: sz * 0.52, border: borderW + "px solid " + borderC, boxShadow: shadow, outline: outline, outlineOffset: 2, flexShrink: 0 }}>
+      {player.emoji}
+    </div>
+  );
+}
+
+/* Player name with color style */
+function PlayerName(props) {
+  var player = props.player;
+  var sz = props.size || 13;
+  var cs = CSTYLES.find(function(c) { return c.id === player.cstyle; }) || CSTYLES[0];
+  if (!cs.grad) {
+    return <span style={{ fontFamily: FD, fontWeight: 700, fontSize: sz, color: player.color }}>{player.name}</span>;
+  }
+  return (
+    <span style={{ fontFamily: FD, fontWeight: 700, fontSize: sz, background: cs.grad, backgroundSize: "200% 100%", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+      {player.name}
+    </span>
+  );
+}
+
+/* ═══ LOGIN ═══ */
 function LoginScreen(props) {
   var players = props.players;
   var onLogin = props.onLogin;
-  var sel = useState(null);
-  var selected = sel[0];
-  var setSel = sel[1];
-  var pi = useState("");
-  var pin = pi[0];
-  var setPin = pi[1];
-  var er = useState(false);
-  var error = er[0];
-  var setErr = er[1];
+  var st = useState(null); var sel = st[0]; var setSel = st[1];
+  var pt = useState(""); var pin = pt[0]; var setPin = pt[1];
+  var er = useState(false); var err = er[0]; var setErr = er[1];
 
   function handleKey(n) {
     if (n === "del") { setPin(pin.slice(0, -1)); setErr(false); return; }
@@ -163,178 +466,133 @@ function LoginScreen(props) {
     setPin(next);
     if (next.length === 4) {
       setTimeout(function() {
-        if (players[selected].pin === next) { onLogin(players[selected].name); }
+        if (players[sel].pin === next) onLogin(players[sel].name);
         else { setErr(true); setTimeout(function() { setErr(false); setPin(""); }, 1000); }
       }, 200);
     }
   }
 
   return (
-    <div style={{ minHeight: "100vh", background: BG, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: FB, color: TP }}>
+    <div style={{ minHeight: "100vh", background: BG, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: 24, fontFamily: FB, color: TP, position: "relative", overflow: "hidden" }}>
+      <style>{CSS_ANIM}</style>
       <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      <h1 style={{ fontFamily: FD, fontSize: 32, fontWeight: 800, margin: "0 0 4px", letterSpacing: 3, color: AC }}>LEC PRONOS</h1>
-      <p style={{ fontSize: 11, color: TD, margin: "0 0 36px", letterSpacing: 2 }}>SPRING 2026</p>
-      <div style={{ fontSize: 11, fontWeight: 600, color: TD, letterSpacing: 2, marginBottom: 14 }}>QUI ES-TU ?</div>
-      <div style={{ display: "flex", gap: 10, marginBottom: 28, flexWrap: "wrap", justifyContent: "center" }}>
-        {players.map(function(p, i) {
+      <div style={{ position: "absolute", top: -200, left: "30%", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, " + N1 + "08, transparent 70%)", pointerEvents: "none" }} />
+      <h1 style={{ fontFamily: FD, fontSize: 36, fontWeight: 800, margin: "0 0 4px", letterSpacing: 4, color: N1, textShadow: "0 0 30px " + N1 + "40" }}>LEC PRONOS</h1>
+      <p style={{ fontSize: 11, color: TD, margin: "0 0 40px", letterSpacing: 3 }}>SPRING 2026</p>
+      <div style={{ fontSize: 11, fontWeight: 600, color: N2, letterSpacing: 3, marginBottom: 16 }}>CHOISIR SON PROFIL</div>
+      <div style={{ display: "flex", gap: 12, marginBottom: 30, flexWrap: "wrap", justifyContent: "center" }}>
+        {players.map(function(pl, i) {
+          var active = sel === i;
           return (
-            <button key={p.name} onClick={function() { setSel(i); setPin(""); setErr(false); }}
-              style={{ width: 80, padding: "14px 8px", borderRadius: 14, border: selected === i ? "2px solid " + p.color : "2px solid " + BD, background: selected === i ? p.color + "15" : S1, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 6 }}>
-              <div style={{ fontSize: 28 }}>{p.emoji}</div>
-              <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 12, color: p.color }}>{p.name}</div>
+            <button key={pl.name} onClick={function() { setSel(i); setPin(""); setErr(false); }}
+              style={{ width: 85, padding: "16px 8px", borderRadius: 16, border: active ? "2px solid " + pl.color : "1px solid " + BD, background: active ? pl.color + "12" : S1, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, boxShadow: active ? "0 0 20px " + pl.color + "30" : "none" }}>
+              <div style={{ fontSize: 32 }}>{pl.emoji}</div>
+              <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 12, color: pl.color }}>{pl.name}</div>
             </button>
           );
         })}
       </div>
-      {selected !== null && (
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12 }}>
+      {sel !== null && (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, animation: "slideUp 0.3s ease" }}>
           <div style={{ fontSize: 11, color: TD, fontWeight: 600 }}>Code PIN</div>
           <div style={{ display: "flex", gap: 8 }}>
-            {[0, 1, 2, 3].map(function(idx) {
-              return (
-                <div key={idx} style={{ width: 40, height: 48, borderRadius: 10, border: "2px solid " + (error ? "#ef4444" : pin.length > idx ? players[selected].color : BD), background: S2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, color: TP }}>
-                  {pin[idx] ? "•" : ""}
-                </div>
-              );
+            {[0,1,2,3].map(function(idx) {
+              return <div key={idx} style={{ width: 42, height: 50, borderRadius: 12, border: "2px solid " + (err ? N3 : pin.length > idx ? players[sel].color : BD), background: S2, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, fontWeight: 800, color: TP }}>{pin[idx] ? "•" : ""}</div>;
             })}
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 4 }}>
-            {[1, 2, 3, 4, 5, 6, 7, 8, 9, -1, 0, "del"].map(function(n, idx) {
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 6 }}>
+            {[1,2,3,4,5,6,7,8,9,-1,0,"del"].map(function(n, idx) {
               if (n === -1) return <div key={idx} />;
-              return (
-                <button key={idx} onClick={function() { handleKey(n); }}
-                  style={{ width: 52, height: 44, borderRadius: 10, border: "1px solid " + BD, background: S1, color: TP, fontSize: n === "del" ? 14 : 18, fontWeight: 600, cursor: "pointer", fontFamily: FD }}>
-                  {n === "del" ? "←" : n}
-                </button>
-              );
+              return <button key={idx} onClick={function() { handleKey(n); }} style={{ width: 54, height: 46, borderRadius: 12, border: "1px solid " + BD, background: S1, color: TP, fontSize: n === "del" ? 14 : 18, fontWeight: 600, cursor: "pointer", fontFamily: FD }}>{n === "del" ? "←" : n}</button>;
             })}
           </div>
-          {error && <div style={{ fontSize: 11, color: "#ef4444", fontWeight: 600, marginTop: 4 }}>Code incorrect</div>}
+          {err && <div style={{ fontSize: 11, color: N3, fontWeight: 600 }}>Code incorrect</div>}
         </div>
       )}
-      <button onClick={function() { onLogin("__admin"); }} style={{ marginTop: 32, background: "none", border: "none", color: TD, fontSize: 10, cursor: "pointer", fontFamily: FD, opacity: 0.5 }}>
-        Admin
-      </button>
+      <button onClick={function() { onLogin("__admin"); }} style={{ marginTop: 36, background: "none", border: "none", color: TD, fontSize: 10, cursor: "pointer", fontFamily: FD, opacity: 0.4 }}>Admin</button>
     </div>
   );
 }
 
-/* ── Match Card ── */
+/* ═══ MATCH CARD ═══ */
 function MatchCard(props) {
-  var m = props.match;
-  var players = props.players;
-  var onUpdate = props.onUpdate;
-  var user = props.currentUser;
-  var isAdmin = props.isAdmin;
-  var spoil = props.spoil;
-  var exp = useState(false);
-  var expanded = exp[0];
-  var setExp = exp[1];
+  var m = props.match; var players = props.players; var onUpdate = props.onUpdate;
+  var user = props.currentUser; var isAdmin = props.isAdmin; var spoil = props.spoil;
+  var ex = useState(false); var expanded = ex[0]; var setEx = ex[1];
   var played = !!m.winner;
   var scores = m.bo === 5 ? SC5 : SC3;
   var myPred = m.preds[user] || {};
 
   return (
-    <div style={{ background: S1, borderRadius: 14, overflow: "hidden", border: played ? "1px solid " + BD : "2px solid " + AC + "40" }}>
-      {/* Banner */}
+    <div style={{ background: S1, borderRadius: 14, overflow: "hidden", border: played ? "1px solid " + BD : "1px solid " + N1 + "30", boxShadow: !played ? "0 0 15px " + N1 + "08" : "none" }}>
       {!played && (
-        <div style={{ background: "linear-gradient(90deg, " + AC + "25, transparent)", padding: "6px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ background: "linear-gradient(90deg, " + N1 + "12, transparent)", padding: "5px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />
-            <span style={{ fontSize: 10, fontWeight: 700, color: AC, letterSpacing: 1 }}>{m.day}</span>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: NG, display: "inline-block", animation: "pulse 2s infinite" }} />
+            <span style={{ fontSize: 10, fontWeight: 700, color: N1, letterSpacing: 1 }}>{m.day}</span>
           </div>
           <div style={{ display: "flex", gap: 3 }}>
             {players.map(function(p) {
               var done = !!(m.preds[p.name] && m.preds[p.name].winner);
-              return (
-                <div key={p.name} style={{ width: 18, height: 18, borderRadius: "50%", background: done ? p.color + "30" : S2, border: "2px solid " + (done ? p.color : BD), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 700, color: done ? p.color : TD }}>
-                  {done ? "✓" : "?"}
-                </div>
-              );
+              return <div key={p.name} style={{ width: 16, height: 16, borderRadius: "50%", background: done ? p.color + "25" : S2, border: "1.5px solid " + (done ? p.color : BD), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7, fontWeight: 700, color: done ? p.color : TD }}>{done ? "✓" : "?"}</div>;
             })}
           </div>
         </div>
       )}
-      {played && (
-        <div style={{ padding: "3px 14px", background: S2 }}>
-          <span style={{ fontSize: 9, color: TD, letterSpacing: 1 }}>{spoil ? m.day : "TERMINE - " + m.day}</span>
-        </div>
-      )}
-
-      {/* Teams */}
-      <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={function() { setExp(!expanded); }}>
+      {played && <div style={{ padding: "3px 14px", background: S2 }}><span style={{ fontSize: 9, color: TD, letterSpacing: 1 }}>{spoil ? m.day : "TERMINE - " + m.day}</span></div>}
+      <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={function() { setEx(!expanded); }}>
         <TeamLogo team={m.team1} size={32} />
-        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 13, flex: 1, textAlign: "right", color: !spoil && played && m.winner === m.team1 ? "#10b981" : TP }}>{m.team1}</span>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 70 }}>
+        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 13, flex: 1, textAlign: "right", color: !spoil && played && m.winner === m.team1 ? NG : TP }}>{m.team1}</span>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 72 }}>
           <div style={{ display: "flex", gap: 5, fontSize: 10 }}>
-            <span style={{ color: "#e8364f", fontWeight: 600 }}>{m.cote1}</span>
+            <span style={{ color: N3, fontWeight: 600 }}>{m.cote1}</span>
             <span style={{ color: TD }}>|</span>
-            <span style={{ color: "#3b82f6", fontWeight: 600 }}>{m.cote2}</span>
+            <span style={{ color: N2, fontWeight: 600 }}>{m.cote2}</span>
           </div>
-          {played && !spoil && <div style={{ fontFamily: FD, fontSize: 18, fontWeight: 800, color: "#10b981", letterSpacing: 2 }}>{m.score}</div>}
+          {played && !spoil && <div style={{ fontFamily: FD, fontSize: 20, fontWeight: 800, color: NG, letterSpacing: 2 }}>{m.score}</div>}
           {played && spoil && <div style={{ fontSize: 14, marginTop: 2 }}>🔒</div>}
-          {!played && <div style={{ fontSize: 12, fontWeight: 800, color: AC, marginTop: 2 }}>VS</div>}
+          {!played && <div style={{ fontSize: 13, fontWeight: 800, color: N1, marginTop: 2 }}>VS</div>}
         </div>
-        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 13, flex: 1, color: !spoil && played && m.winner === m.team2 ? "#10b981" : TP }}>{m.team2}</span>
+        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 13, flex: 1, color: !spoil && played && m.winner === m.team2 ? NG : TP }}>{m.team2}</span>
         <TeamLogo team={m.team2} size={32} />
         <span style={{ fontSize: 10, color: TD, transform: expanded ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>
       </div>
-
-      {/* Quick pred for upcoming */}
       {!played && !expanded && (
         <div style={{ padding: "0 14px 10px" }}>
           {myPred.winner ? (
-            <div style={{ padding: "6px 10px", borderRadius: 8, background: "#10b98110", border: "1px solid #10b98120", fontSize: 11, color: "#10b981", fontWeight: 600 }}>
-              Ton prono : {myPred.winner} - {myPred.score}
-            </div>
+            <div style={{ padding: "6px 10px", borderRadius: 8, background: NG + "10", border: "1px solid " + NG + "25", fontSize: 11, color: NG, fontWeight: 600 }}>Ton prono : {myPred.winner} - {myPred.score}</div>
           ) : (
-            <div style={{ padding: "6px 10px", borderRadius: 8, background: "#f59e0b10", border: "1px solid #f59e0b20", fontSize: 11, color: "#f59e0b", fontWeight: 600 }}>
-              Clique pour pronostiquer
-            </div>
+            <div style={{ padding: "6px 10px", borderRadius: 8, background: N2 + "10", border: "1px solid " + N2 + "25", fontSize: 11, color: N2, fontWeight: 600 }}>Clique pour pronostiquer</div>
           )}
         </div>
       )}
-
-      {/* Played: show predictions */}
       {played && !spoil && (
         <div style={{ padding: "0 14px 10px", display: "flex", gap: 4 }}>
           {players.map(function(p) {
             var pr = m.preds[p.name] || {};
-            var pt = pts(m, pr);
-            var ok = pt > 0;
-            var pf = pr.score === m.score && ok;
+            var pt = calcPts(m, pr); var ok = pt > 0; var pf = pr.score === m.score && ok;
             return (
-              <div key={p.name} style={{ flex: 1, borderRadius: 10, padding: "6px 2px", textAlign: "center", background: pf ? "#FFD70010" : ok ? "#10b9810e" : "#ef444408", border: "1px solid " + (pf ? "#FFD70028" : ok ? "#10b98118" : "#ef444415") }}>
+              <div key={p.name} style={{ flex: 1, borderRadius: 10, padding: "6px 2px", textAlign: "center", background: pf ? "#FFD70008" : ok ? NG + "08" : N3 + "06", border: "1px solid " + (pf ? "#FFD70025" : ok ? NG + "18" : N3 + "15") }}>
                 <div style={{ fontSize: 12, marginBottom: 1 }}>{p.emoji}</div>
                 <div style={{ fontSize: 9, fontWeight: 600, color: p.color }}>{p.name}</div>
                 <div style={{ fontSize: 9, color: TD }}>{pr.winner || "-"}</div>
                 <div style={{ fontSize: 9, color: TD }}>{pr.score || ""}</div>
-                <div style={{ fontSize: 12, fontWeight: 800, marginTop: 2, color: pf ? "#FFD700" : ok ? "#10b981" : "#ef4444" }}>
-                  {!pr.winner ? "-" : pf ? "+" + pt + " ★" : ok ? "+" + pt : "0"}
-                </div>
+                <div style={{ fontSize: 12, fontWeight: 800, marginTop: 2, color: pf ? "#FFD700" : ok ? NG : N3 }}>{!pr.winner ? "-" : pf ? "+" + pt + " ★" : ok ? "+" + pt : "0"}</div>
               </div>
             );
           })}
         </div>
       )}
-
       {played && spoil && !expanded && (
-        <div style={{ padding: "0 14px 10px", textAlign: "center" }}>
-          <div style={{ padding: 8, borderRadius: 8, border: "1px dashed " + AC, background: AC + "10", fontSize: 10, color: AC, fontWeight: 600 }}>
-            🔒 Resultat masque
-          </div>
-        </div>
+        <div style={{ padding: "0 14px 10px", textAlign: "center" }}><div style={{ padding: 8, borderRadius: 8, border: "1px dashed " + N1 + "40", background: N1 + "06", fontSize: 10, color: N1, fontWeight: 600 }}>🔒 Masque</div></div>
       )}
-
-      {/* Expanded upcoming: edit pred */}
       {!played && expanded && (
         <div style={{ borderTop: "1px solid " + BD, padding: "10px 14px" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: AC, letterSpacing: 2, marginBottom: 8 }}>TON PRONOSTIC</div>
+          <div style={{ fontSize: 9, fontWeight: 700, color: N1, letterSpacing: 2, marginBottom: 8 }}>TON PRONOSTIC</div>
           <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 9, fontWeight: 600, color: TD, marginBottom: 2 }}>VAINQUEUR</div>
-              <select value={myPred.winner || ""} onChange={function(e) { onUpdate(m.id, user, "winner", e.target.value || null); }}
-                style={{ background: S2, color: TP, border: "1px solid " + BD, borderRadius: 8, padding: "5px 8px", fontSize: 11, width: "100%", outline: "none" }}>
+              <select value={myPred.winner || ""} onChange={function(e) { onUpdate(m.id, user, "winner", e.target.value || null); }} style={{ background: S2, color: TP, border: "1px solid " + BD, borderRadius: 8, padding: "6px 8px", fontSize: 11, width: "100%", outline: "none" }}>
                 <option value="">Choisis...</option>
                 <option value={m.team1}>{m.team1}</option>
                 <option value={m.team2}>{m.team2}</option>
@@ -342,20 +600,18 @@ function MatchCard(props) {
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 9, fontWeight: 600, color: TD, marginBottom: 2 }}>SCORE</div>
-              <select value={myPred.score || ""} onChange={function(e) { onUpdate(m.id, user, "score", e.target.value || null); }}
-                style={{ background: S2, color: TP, border: "1px solid " + BD, borderRadius: 8, padding: "5px 8px", fontSize: 11, width: "100%", outline: "none" }}>
+              <select value={myPred.score || ""} onChange={function(e) { onUpdate(m.id, user, "score", e.target.value || null); }} style={{ background: S2, color: TP, border: "1px solid " + BD, borderRadius: 8, padding: "6px 8px", fontSize: 11, width: "100%", outline: "none" }}>
                 <option value="">Score...</option>
-                {scores.map(function(s) { return <option key={s} value={s}>{s}</option>; })}
+                {scores.map(function(sc) { return <option key={sc} value={sc}>{sc}</option>; })}
               </select>
             </div>
           </div>
           {isAdmin && (
             <div style={{ borderTop: "1px solid " + BD, paddingTop: 8, display: "flex", gap: 6, alignItems: "center" }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: AC }}>RESULTAT :</span>
-              <select value={m.score || ""} onChange={function(e) { var sc = e.target.value || null; onUpdate(m.id, "__result", "score", sc); onUpdate(m.id, "__result", "winner", sc ? winOf(m.team1, m.team2, sc) : null); }}
-                style={{ background: S2, color: TP, border: "1px solid " + BD, borderRadius: 8, padding: "5px 8px", fontSize: 11, outline: "none" }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: N1 }}>RESULTAT :</span>
+              <select value={m.score || ""} onChange={function(e) { var sc = e.target.value || null; onUpdate(m.id, "__result", "score", sc); onUpdate(m.id, "__result", "winner", sc ? winOf(m.team1, m.team2, sc) : null); }} style={{ background: S2, color: TP, border: "1px solid " + BD, borderRadius: 8, padding: "5px 8px", fontSize: 11, outline: "none" }}>
                 <option value="">Score final...</option>
-                {scores.map(function(s) { return <option key={s} value={s}>{s}</option>; })}
+                {scores.map(function(sc) { return <option key={sc} value={sc}>{sc}</option>; })}
               </select>
             </div>
           )}
@@ -365,86 +621,103 @@ function MatchCard(props) {
   );
 }
 
-/* ── Dashboard ── */
+/* ═══ DASHBOARD ═══ */
 function Dashboard(props) {
-  var matches = props.matches;
-  var players = props.players;
-  var user = props.currentUser;
-  var onNav = props.onNav;
-  var spoil = props.spoil;
-
-  var stats = players.map(function(p) {
-    var s = getStats(matches, p.name);
-    return Object.assign({}, p, s);
-  }).sort(function(a, b) { return b.total - a.total; });
-
-  var myPending = matches.filter(function(m) { return !m.winner && (!m.preds[user] || !m.preds[user].winner); });
-  var upcoming = matches.filter(function(m) { return !m.winner; }).slice(0, 3);
+  var matches = props.matches; var players = props.players; var user = props.currentUser; var onNav = props.onNav; var spoil = props.spoil;
+  var stats = players.map(function(p) { var s = getStats(matches, p.name); var xp = getTotalXP(s); var r = getRank(xp); return Object.assign({}, p, s, { xp: xp, ri: r }); }).sort(function(a, b) { return b.total - a.total; });
   var me = stats.find(function(s) { return s.name === user; });
   var myRank = stats.findIndex(function(s) { return s.name === user; }) + 1;
+  var myPending = matches.filter(function(m) { return !m.winner && (!m.preds[user] || !m.preds[user].winner); });
+  var upcoming = matches.filter(function(m) { return !m.winner; }).slice(0, 3);
+
+  var feed = [];
+  matches.forEach(function(m) { if (!m.winner) return; players.forEach(function(p) { var pr = m.preds[p.name]; if (!pr || !pr.winner) return; var pt = calcPts(m, pr); if (pt > 0) { feed.push({ p: p, txt: (pr.score === m.score ? "Parfait +" : "+") + rd(pt) + " pts", mt: m.team1 + " vs " + m.team2, pf: pr.score === m.score }); } }); });
+  feed.reverse(); feed = feed.slice(0, 5);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Welcome */}
-      <div style={{ background: "linear-gradient(135deg, " + (me ? me.color : AC) + "12, transparent)", border: "1px solid " + (me ? me.color : AC) + "25", borderRadius: 16, padding: "16px 18px" }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <NeonCard glow={me ? me.color : N1}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 44, height: 44, borderRadius: "50%", background: (me ? me.color : "#888") + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 24 }}>{me ? me.emoji : "?"}</div>
+          {me && <PlayerAvatar player={me} size={52} />}
           <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 16, color: me ? me.color : TP }}>Salut {user} !</div>
-            <div style={{ fontSize: 11, color: TD }}>{myPending.length > 0 ? myPending.length + " prono(s) en attente" : "Pronos a jour"}</div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              {me ? <PlayerName player={me} size={16} /> : <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 16, color: TP }}>{user}</span>}
+              <span style={{ fontSize: 11, color: TD }}>Salut !</span>
+            </div>
+            {me && me.title && <TitleTag titleId={me.title} />}
+            {me && <div style={{ marginTop: 4 }}><RankBadge rank={me.ri.rank} /></div>}
+            {me && me.ri.next && (
+              <div style={{ marginTop: 6 }}>
+                <div style={{ height: 4, borderRadius: 2, background: BD, overflow: "hidden" }}>
+                  <div style={{ height: "100%", borderRadius: 2, background: "linear-gradient(90deg, " + me.ri.rank.color + ", " + me.ri.next.color + ")", width: (me.ri.progress * 100) + "%" }} />
+                </div>
+                <div style={{ fontSize: 8, color: TD, marginTop: 2 }}>{me.xp} / {me.ri.next.xp} XP</div>
+              </div>
+            )}
           </div>
           {!spoil && me && (
             <div style={{ textAlign: "right" }}>
               <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 22, color: TP }}>{me.total}<span style={{ fontSize: 10, color: TD }}> pts</span></div>
-              <div style={{ fontSize: 10, color: TD }}>{myRank}{myRank === 1 ? "er" : "e"} - WR {me.wr}%</div>
+              <div style={{ fontSize: 10, color: TD }}>{myRank}{myRank === 1 ? "er" : "e"}</div>
             </div>
           )}
         </div>
-      </div>
+      </NeonCard>
 
-      {/* Pending alert */}
       {myPending.length > 0 && (
-        <button onClick={function() { onNav("matches"); }} style={{ background: "#f59e0b10", border: "1px solid #f59e0b25", borderRadius: 12, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", width: "100%", textAlign: "left" }}>
+        <button onClick={function() { onNav("matches"); }} style={{ background: N2 + "10", border: "1px solid " + N2 + "30", borderRadius: 12, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", width: "100%", textAlign: "left" }}>
           <span style={{ fontSize: 18 }}>⚠️</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 12, color: "#f59e0b" }}>Pronos manquants</div>
-            <div style={{ fontSize: 10, color: TD }}>{myPending.length} match(s)</div>
-          </div>
-          <span style={{ fontSize: 12, color: "#f59e0b", fontFamily: FD, fontWeight: 600 }}>Parier</span>
+          <div style={{ flex: 1 }}><div style={{ fontFamily: FD, fontWeight: 700, fontSize: 12, color: N2 }}>{myPending.length} prono(s) manquant(s)</div></div>
+          <span style={{ fontSize: 12, color: N2, fontFamily: FD }}>Parier →</span>
         </button>
       )}
 
-      {/* Leaderboard */}
       {!spoil && (
-        <div style={{ background: S1, border: "1px solid " + BD, borderRadius: 14, padding: "14px 16px" }}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: AC, letterSpacing: 3, marginBottom: 10 }}>CLASSEMENT</div>
-          {stats.map(function(s, i) {
+        <div style={{ display: "flex", gap: 8 }}>
+          {[{ l: "TOP SCORE", k: "total", u: " pts", c: N1 }, { l: "MEILLEUR WR", k: "wr", u: "%", c: N2 }, { l: "PARFAITS", k: "perfects", u: " ★", c: "#FFD700" }].map(function(aw) {
+            var best = stats.slice().sort(function(a, b) { return b[aw.k] - a[aw.k]; })[0];
             return (
-              <div key={s.name} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: i < stats.length - 1 ? "1px solid " + BD : "none" }}>
-                <span style={{ fontFamily: FD, fontWeight: 800, fontSize: 13, width: 18, textAlign: "center", color: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : TD }}>{i + 1}</span>
-                <span style={{ fontSize: 14 }}>{s.emoji}</span>
-                <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 12, color: s.name === user ? s.color : TP, flex: 1 }}>{s.name}</span>
-                <span style={{ fontSize: 10, color: TD }}>WR {s.wr}%</span>
-                <span style={{ fontFamily: FD, fontWeight: 800, fontSize: 14, color: TP, minWidth: 40, textAlign: "right" }}>{s.total}</span>
+              <div key={aw.l} style={{ flex: 1, background: S1, border: "1px solid " + BD, borderRadius: 12, padding: "10px 12px", textAlign: "center" }}>
+                <div style={{ fontSize: 8, fontWeight: 700, color: TD, letterSpacing: 2, marginBottom: 4 }}>{aw.l}</div>
+                <div style={{ fontSize: 18 }}>{best.emoji}</div>
+                <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, color: best.color }}>{best.name}</div>
+                <div style={{ fontSize: 10, color: aw.c, fontWeight: 700 }}>{best[aw.k]}{aw.u}</div>
               </div>
             );
           })}
         </div>
       )}
 
-      {spoil && (
-        <div style={{ background: S1, border: "1px solid " + BD, borderRadius: 14, padding: 30, textAlign: "center" }}>
-          <div style={{ fontSize: 24 }}>🔒</div>
-          <div style={{ fontSize: 10, fontWeight: 700, color: AC, marginTop: 8 }}>ANTI-SPOIL ACTIF</div>
-        </div>
+      {!spoil && (
+        <NeonCard glow={N1}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: N1, letterSpacing: 3, marginBottom: 10 }}>CLASSEMENT</div>
+          {stats.map(function(s, i) {
+            return (
+              <div key={s.name} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: i < stats.length - 1 ? "1px solid " + BD : "none" }}>
+                <span style={{ fontFamily: FD, fontWeight: 800, fontSize: 14, width: 20, textAlign: "center", color: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : TD }}>{i + 1}</span>
+                <PlayerAvatar player={s} size={32} />
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                    <PlayerName player={s} size={12} />
+                    <RankBadge rank={s.ri.rank} />
+                  </div>
+                  {s.title && <TitleTag titleId={s.title} />}
+                  <div style={{ fontSize: 9, color: TD }}>WR {s.wr}% - {s.perfects} parfait(s)</div>
+                </div>
+                <span style={{ fontFamily: FD, fontWeight: 800, fontSize: 16, color: TP }}>{s.total}</span>
+              </div>
+            );
+          })}
+        </NeonCard>
       )}
 
-      {/* Upcoming */}
+      {spoil && <NeonCard glow={N3}><div style={{ textAlign: "center", padding: 20 }}><div style={{ fontSize: 24 }}>🔒</div><div style={{ fontSize: 10, fontWeight: 700, color: N3, marginTop: 8 }}>ANTI-SPOIL ACTIF</div></div></NeonCard>}
+
       {upcoming.length > 0 && (
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 8 }}>
-            <span style={{ fontSize: 10, fontWeight: 700, color: AC, letterSpacing: 3 }}>PROCHAINS MATCHS</span>
-            <button onClick={function() { onNav("matches"); }} style={{ background: "none", border: "none", color: AC, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FD }}>Tout</button>
+            <span style={{ fontSize: 10, fontWeight: 700, color: N1, letterSpacing: 3 }}>PROCHAINS MATCHS</span>
+            <button onClick={function() { onNav("matches"); }} style={{ background: "none", border: "none", color: N1, fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FD }}>Tout →</button>
           </div>
           {upcoming.map(function(um) {
             var done = !!(um.preds[user] && um.preds[user].winner);
@@ -453,41 +726,41 @@ function Dashboard(props) {
                 <TeamLogo team={um.team1} size={22} />
                 <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, flex: 1, textAlign: "right" }}>{um.team1}</span>
                 <div style={{ textAlign: "center", minWidth: 50 }}>
-                  <div style={{ display: "flex", gap: 4, justifyContent: "center", fontSize: 9 }}>
-                    <span style={{ color: "#e8364f", fontWeight: 600 }}>{um.cote1}</span>
-                    <span style={{ color: TD }}>-</span>
-                    <span style={{ color: "#3b82f6", fontWeight: 600 }}>{um.cote2}</span>
-                  </div>
+                  <div style={{ display: "flex", gap: 4, justifyContent: "center", fontSize: 9 }}><span style={{ color: N3, fontWeight: 600 }}>{um.cote1}</span><span style={{ color: TD }}>-</span><span style={{ color: N2, fontWeight: 600 }}>{um.cote2}</span></div>
                   <div style={{ fontSize: 8, color: TD }}>{um.day}</div>
                 </div>
                 <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, flex: 1 }}>{um.team2}</span>
                 <TeamLogo team={um.team2} size={22} />
-                <div style={{ background: done ? "#10b98118" : "#f59e0b18", color: done ? "#10b981" : "#f59e0b", fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6 }}>{done ? "OK" : "..."}</div>
+                <div style={{ background: done ? NG + "18" : N2 + "18", color: done ? NG : N2, fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6 }}>{done ? "OK" : "..."}</div>
               </div>
             );
           })}
         </div>
       )}
+
+      {!spoil && feed.length > 0 && (
+        <NeonCard glow={N2}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: N2, letterSpacing: 3, marginBottom: 10 }}>ACTIVITE RECENTE</div>
+          {feed.map(function(f, i) {
+            return (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: i < feed.length - 1 ? "1px solid " + BD : "none" }}>
+                <span style={{ fontSize: 14 }}>{f.p.emoji}</span>
+                <div style={{ flex: 1, fontSize: 10 }}><span style={{ fontWeight: 600, color: f.p.color }}>{f.p.name} </span><span style={{ color: TD }}>{f.txt} - {f.mt}</span></div>
+                {f.pf && <span style={{ color: "#FFD700" }}>★</span>}
+              </div>
+            );
+          })}
+        </NeonCard>
+      )}
     </div>
   );
 }
 
-/* ── Matches Page ── */
+/* ═══ MATCHES PAGE ═══ */
 function MatchesPage(props) {
-  var matches = props.matches;
-  var players = props.players;
-  var onUpdate = props.onUpdate;
-  var user = props.currentUser;
-  var isAdmin = props.isAdmin;
-  var spoil = props.spoil;
-  var wf = useState("all");
-  var weekFilter = wf[0];
-  var setWf = wf[1];
-
-  var weeks = [];
-  matches.forEach(function(m) { if (weeks.indexOf(m.week) === -1) weeks.push(m.week); });
-  weeks.sort(function(a, b) { return a - b; });
-
+  var matches = props.matches; var players = props.players; var onUpdate = props.onUpdate; var user = props.currentUser; var isAdmin = props.isAdmin; var spoil = props.spoil;
+  var wf = useState("all"); var weekFilter = wf[0]; var setWf = wf[1];
+  var weeks = []; matches.forEach(function(m) { if (weeks.indexOf(m.week) === -1) weeks.push(m.week); }); weeks.sort();
   var fil = weekFilter === "all" ? matches : matches.filter(function(m) { return m.week === Number(weekFilter); });
   var up = fil.filter(function(m) { return !m.winner; });
   var done = fil.filter(function(m) { return !!m.winner; });
@@ -495,256 +768,289 @@ function MatchesPage(props) {
   return (
     <div>
       <div style={{ display: "flex", gap: 5, marginBottom: 16, flexWrap: "wrap" }}>
-        <button onClick={function() { setWf("all"); }} style={{ border: "1px solid " + BD, borderRadius: 8, padding: "5px 12px", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FD, background: weekFilter === "all" ? AC : S2, color: weekFilter === "all" ? "#000" : TD }}>Toutes</button>
-        {weeks.map(function(w) {
-          return (
-            <button key={w} onClick={function() { setWf(w); }} style={{ border: "1px solid " + BD, borderRadius: 8, padding: "5px 12px", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FD, background: weekFilter === w ? AC : S2, color: weekFilter === w ? "#000" : TD }}>
-              W{w}
-            </button>
-          );
-        })}
+        <button onClick={function() { setWf("all"); }} style={{ border: "1px solid " + BD, borderRadius: 8, padding: "5px 12px", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FD, background: weekFilter === "all" ? N1 : S2, color: weekFilter === "all" ? BG : TD }}>Toutes</button>
+        {weeks.map(function(w) { return <button key={w} onClick={function() { setWf(w); }} style={{ border: "1px solid " + BD, borderRadius: 8, padding: "5px 12px", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FD, background: weekFilter === w ? N1 : S2, color: weekFilter === w ? BG : TD }}>W{w}</button>; })}
       </div>
-
-      {/* Upcoming */}
       {up.length > 0 && (
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "8px 14px", borderRadius: 10, background: "linear-gradient(90deg, #10b98115, transparent)", borderLeft: "3px solid #10b981" }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "#10b981", letterSpacing: 2, fontFamily: FD }}>MATCHS A VENIR ({up.length})</span>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ padding: "8px 14px", borderRadius: 10, background: "linear-gradient(90deg, " + N1 + "10, transparent)", borderLeft: "3px solid " + N1, marginBottom: 10 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: N1, letterSpacing: 2, fontFamily: FD }}>A VENIR ({up.length})</span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-            {up.map(function(m) { return <MatchCard key={m.id} match={m} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} />; })}
-          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{up.map(function(m) { return <MatchCard key={m.id} match={m} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} />; })}</div>
         </div>
       )}
-
-      {up.length > 0 && done.length > 0 && (
-        <div style={{ height: 1, background: "linear-gradient(90deg, transparent, " + BD + ", transparent)", margin: "4px 0 20px" }} />
-      )}
-
-      {/* Completed */}
+      {up.length > 0 && done.length > 0 && <div style={{ height: 1, background: "linear-gradient(90deg, transparent, " + BD + ", transparent)", margin: "0 0 20px" }} />}
       {done.length > 0 && (
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12, padding: "8px 14px", borderRadius: 10, background: S2, borderLeft: "3px solid " + TD }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: TD, letterSpacing: 2, fontFamily: FD }}>MATCHS TERMINES ({done.length})</span>
+          <div style={{ padding: "8px 14px", borderRadius: 10, background: S2, borderLeft: "3px solid " + TD, marginBottom: 10 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: TD, letterSpacing: 2, fontFamily: FD }}>TERMINES ({done.length})</span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {done.map(function(m) { return <MatchCard key={m.id} match={m} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={spoil} />; })}
-          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{done.map(function(m) { return <MatchCard key={m.id} match={m} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={spoil} />; })}</div>
         </div>
       )}
     </div>
   );
 }
 
-/* ── Stats Page ── */
+/* ═══ STATS PAGE ═══ */
 function StatsPage(props) {
-  var matches = props.matches;
-  var players = props.players;
-  var spoil = props.spoil;
-
-  if (spoil) {
-    return (
-      <div style={{ textAlign: "center", padding: "60px 20px" }}>
-        <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
-        <div style={{ fontFamily: FD, fontSize: 16, fontWeight: 700, color: AC }}>Anti-spoil actif</div>
-      </div>
-    );
-  }
-
+  var matches = props.matches; var players = props.players; var spoil = props.spoil;
+  if (spoil) return <div style={{ textAlign: "center", padding: "60px 20px" }}><div style={{ fontSize: 48 }}>🔒</div><div style={{ fontFamily: FD, fontSize: 16, fontWeight: 700, color: N1, marginTop: 8 }}>Anti-spoil actif</div></div>;
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
       {players.map(function(p) {
-        var s = getStats(matches, p.name);
-        var unlocked = getUnlocked(s);
+        var s = getStats(matches, p.name); var xp = getTotalXP(s); var r = getRank(xp); var ul = getUnlocked(s);
         return (
-          <div key={p.name} style={{ background: S1, border: "1px solid " + p.color + "20", borderRadius: 12, padding: 12 }}>
+          <NeonCard key={p.name} glow={p.color} pad="12px">
             <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
               <span style={{ fontSize: 16 }}>{p.emoji}</span>
-              <span style={{ fontFamily: FD, fontWeight: 700, color: p.color, fontSize: 13 }}>{p.name}</span>
+              <div><div style={{ fontFamily: FD, fontWeight: 700, color: p.color, fontSize: 13 }}>{p.name}</div><RankBadge rank={r.rank} /></div>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, fontSize: 10, marginBottom: unlocked.length > 0 ? 6 : 0 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, fontSize: 10 }}>
               <div><span style={{ color: TD }}>Winrate</span><br /><span style={{ fontWeight: 700 }}>{s.wr}%</span></div>
-              <div><span style={{ color: TD }}>Moy/match</span><br /><span style={{ fontWeight: 700 }}>{s.played > 0 ? (s.total / s.played).toFixed(1) : "0"}</span></div>
+              <div><span style={{ color: TD }}>Moy</span><br /><span style={{ fontWeight: 700 }}>{s.played > 0 ? (s.total / s.played).toFixed(1) : "0"}</span></div>
               <div><span style={{ color: TD }}>Parfaits</span><br /><span style={{ fontWeight: 700, color: "#FFD700" }}>{s.perfects}</span></div>
-              <div><span style={{ color: TD }}>Total</span><br /><span style={{ fontWeight: 700, color: "#10b981" }}>{s.total}</span></div>
+              <div><span style={{ color: TD }}>Total</span><br /><span style={{ fontWeight: 700, color: NG }}>{s.total}</span></div>
             </div>
-            {unlocked.length > 0 && (
-              <div style={{ display: "flex", gap: 3, flexWrap: "wrap" }}>
-                {unlocked.map(function(a) { return <span key={a.id} title={a.desc} style={{ fontSize: 9, padding: "2px 5px", borderRadius: 4, background: S2, border: "1px solid " + BD }}>{a.icon} {a.name}</span>; })}
-              </div>
-            )}
-          </div>
+            <div style={{ fontSize: 9, color: TD, marginTop: 4 }}>{ul.length}/{ACHS.length} succes - {xp} XP</div>
+          </NeonCard>
         );
       })}
     </div>
   );
 }
 
-/* ── Profile Page ── */
+/* ═══ PROFILE PAGE ═══ */
 function ProfilePage(props) {
-  var matches = props.matches;
-  var players = props.players;
-  var user = props.currentUser;
-  var onUp = props.onUpdatePlayer;
+  var matches = props.matches; var players = props.players; var user = props.currentUser; var onUp = props.onUpdatePlayer;
   var me = players.find(function(p) { return p.name === user; });
   var pi = players.findIndex(function(p) { return p.name === user; });
   if (!me) return null;
   var s = getStats(matches, user);
-  var unlocked = getUnlocked(s);
-  var locked = ACHIEVE.filter(function(a) { return s[a.ck] < a.min; });
+  var xp = getTotalXP(s); var r = getRank(xp);
+  var ul = getUnlocked(s);
+  var ulIds = ul.map(function(a) { return a.id; });
+  var allIds = getAllIds(s);
+  var locked = ACHS.filter(function(a) { return ulIds.indexOf(a.id) === -1 && !a.hidden; });
+  var hiddenN = ACHS.filter(function(a) { return ulIds.indexOf(a.id) === -1 && a.hidden; }).length;
+  var availT = getAvailTitles(s);
+  var availAv = getAvailAvatars(allIds);
+  var availOrn = getAvailOrnaments(allIds);
+  var availCS = getAvailCStyles(allIds);
+  var sec = useState("succes"); var activeSec = sec[0]; var setSec = sec[1];
+  var cf = useState("all"); var catF = cf[0]; var setCatF = cf[1];
+
+  var filtAll = catF === "all" ? ACHS : ACHS.filter(function(a) { return a.cat === catF; });
+  var filtUl = filtAll.filter(function(a) { return ulIds.indexOf(a.id) !== -1; });
+  var filtLo = filtAll.filter(function(a) { return ulIds.indexOf(a.id) === -1 && !a.hidden; });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-      {/* Profile card */}
-      <div style={{ background: "linear-gradient(135deg, " + me.color + "15, transparent)", border: "1px solid " + me.color + "30", borderRadius: 18, padding: "20px 18px", textAlign: "center" }}>
-        <div style={{ width: 72, height: 72, borderRadius: "50%", background: me.color + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 36, margin: "0 auto 8px", border: "3px solid " + me.color + "44", position: "relative" }}>
-          {me.emoji}
-          {me.badge && <span style={{ position: "absolute", bottom: -4, right: -4, fontSize: 20, background: S1, borderRadius: "50%", padding: 2 }}>{me.badge}</span>}
-        </div>
-        <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 20, color: me.color }}>{me.name}</div>
-        <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 12 }}>
-          <div><div style={{ fontFamily: FD, fontWeight: 800, fontSize: 22, color: TP }}>{s.total}</div><div style={{ fontSize: 9, color: TD }}>POINTS</div></div>
-          <div><div style={{ fontFamily: FD, fontWeight: 800, fontSize: 22, color: TP }}>{s.wr}%</div><div style={{ fontSize: 9, color: TD }}>WINRATE</div></div>
-          <div><div style={{ fontFamily: FD, fontWeight: 800, fontSize: 22, color: "#FFD700" }}>{s.perfects}</div><div style={{ fontSize: 9, color: TD }}>PARFAITS</div></div>
-          <div><div style={{ fontFamily: FD, fontWeight: 800, fontSize: 22, color: TP }}>{s.played}</div><div style={{ fontSize: 9, color: TD }}>MATCHS</div></div>
-        </div>
-      </div>
-
-      {/* Customization */}
-      <div style={{ background: S1, border: "1px solid " + BD, borderRadius: 14, padding: 16 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: AC, letterSpacing: 3, marginBottom: 12 }}>PERSONNALISATION</div>
-        <div style={{ fontSize: 9, fontWeight: 600, color: TD, marginBottom: 6 }}>AVATAR</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 14 }}>
-          {AVATARS.map(function(em) {
-            return (
-              <button key={em} onClick={function() { onUp(pi, Object.assign({}, me, { emoji: em })); }}
-                style={{ width: 36, height: 36, borderRadius: 8, border: me.emoji === em ? "2px solid " + AC : "1px solid " + BD, background: me.emoji === em ? AC + "18" : S2, fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {em}
-              </button>
-            );
-          })}
-        </div>
-        <div style={{ fontSize: 9, fontWeight: 600, color: TD, marginBottom: 6 }}>COULEUR</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 14 }}>
-          {COLORS.map(function(co) {
-            return (
-              <button key={co} onClick={function() { onUp(pi, Object.assign({}, me, { color: co })); }}
-                style={{ width: 32, height: 32, borderRadius: "50%", border: me.color === co ? "3px solid #fff" : "2px solid transparent", background: co, cursor: "pointer" }} />
-            );
-          })}
-        </div>
-        <div style={{ fontSize: 9, fontWeight: 600, color: TD, marginBottom: 6 }}>BADGE MIS EN AVANT</div>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-          <button onClick={function() { onUp(pi, Object.assign({}, me, { badge: null })); }}
-            style={{ padding: "4px 10px", borderRadius: 6, border: !me.badge ? "2px solid " + AC : "1px solid " + BD, background: !me.badge ? AC + "18" : S2, fontSize: 10, cursor: "pointer", color: TD }}>
-            Aucun
-          </button>
-          {unlocked.map(function(a) {
-            return (
-              <button key={a.id} onClick={function() { onUp(pi, Object.assign({}, me, { badge: a.icon })); }}
-                style={{ padding: "4px 10px", borderRadius: 6, border: me.badge === a.icon ? "2px solid " + AC : "1px solid " + BD, background: me.badge === a.icon ? AC + "18" : S2, fontSize: 12, cursor: "pointer" }}
-                title={a.name}>
-                {a.icon}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Achievements */}
-      <div style={{ background: S1, border: "1px solid " + BD, borderRadius: 14, padding: 16 }}>
-        <div style={{ fontSize: 10, fontWeight: 700, color: AC, letterSpacing: 3, marginBottom: 4 }}>SUCCES</div>
-        <div style={{ fontSize: 10, color: TD, marginBottom: 14 }}>{unlocked.length}/{ACHIEVE.length} debloques</div>
-        <div style={{ height: 6, borderRadius: 3, background: S2, marginBottom: 16, overflow: "hidden" }}>
-          <div style={{ height: "100%", borderRadius: 3, background: "linear-gradient(90deg, " + me.color + ", " + AC + ")", width: (unlocked.length / ACHIEVE.length * 100) + "%", transition: "width 0.5s" }} />
-        </div>
-
-        {unlocked.length > 0 && (
-          <div style={{ marginBottom: 16 }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: "#10b981", letterSpacing: 2, marginBottom: 8 }}>DEBLOQUES</div>
-            {unlocked.map(function(a) {
-              return (
-                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, background: "#10b98108", border: "1px solid #10b98120", marginBottom: 6 }}>
-                  <span style={{ fontSize: 22 }}>{a.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 12, color: TP }}>{a.name}</div>
-                    <div style={{ fontSize: 10, color: TD }}>{a.desc}</div>
-                  </div>
-                  <span style={{ fontSize: 10, color: "#10b981", fontWeight: 700 }}>OK</span>
-                </div>
-              );
-            })}
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <NeonCard glow={me.color}>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+            <PlayerAvatar player={me} size={80} />
           </div>
-        )}
-
-        {locked.length > 0 && (
-          <div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: TD, letterSpacing: 2, marginBottom: 8 }}>VERROUILLES</div>
-            {locked.map(function(a) {
-              return (
-                <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 10, background: S2, border: "1px solid " + BD, marginBottom: 6, opacity: 0.6 }}>
-                  <span style={{ fontSize: 22, filter: "grayscale(1)" }}>{a.icon}</span>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 12, color: TD }}>{a.name}</div>
-                    <div style={{ fontSize: 10, color: TD }}>{a.desc}</div>
-                  </div>
-                  <span style={{ fontSize: 10, color: TD }}>🔒</span>
-                </div>
-              );
-            })}
+          <PlayerName player={me} size={22} />
+          {me.title && <TitleTag titleId={me.title} />}
+          <div style={{ marginTop: 6 }}><RankBadge rank={r.rank} /></div>
+          {r.next && (
+            <div style={{ maxWidth: 220, margin: "8px auto 0" }}>
+              <div style={{ height: 6, borderRadius: 3, background: BD, overflow: "hidden" }}>
+                <div style={{ height: "100%", borderRadius: 3, background: "linear-gradient(90deg, " + r.rank.color + ", " + r.next.color + ")", width: (r.progress * 100) + "%" }} />
+              </div>
+              <div style={{ fontSize: 9, color: TD, marginTop: 3 }}>{xp} / {r.next.xp} XP - {r.next.label}</div>
+            </div>
+          )}
+          <div style={{ display: "flex", justifyContent: "center", gap: 20, marginTop: 14 }}>
+            <div><div style={{ fontFamily: FD, fontWeight: 800, fontSize: 22, color: TP }}>{s.total}</div><div style={{ fontSize: 9, color: TD }}>POINTS</div></div>
+            <div><div style={{ fontFamily: FD, fontWeight: 800, fontSize: 22, color: TP }}>{s.wr}%</div><div style={{ fontSize: 9, color: TD }}>WINRATE</div></div>
+            <div><div style={{ fontFamily: FD, fontWeight: 800, fontSize: 22, color: "#FFD700" }}>{s.perfects}</div><div style={{ fontSize: 9, color: TD }}>PARFAITS</div></div>
+            <div><div style={{ fontFamily: FD, fontWeight: 800, fontSize: 22, color: NG }}>{ul.length}</div><div style={{ fontSize: 9, color: TD }}>SUCCES</div></div>
           </div>
-        )}
+        </div>
+      </NeonCard>
+
+      <div style={{ display: "flex", gap: 4, borderBottom: "1px solid " + BD }}>
+        {[{ id: "succes", l: "Succes" }, { id: "custom", l: "Personnalisation" }].map(function(t) {
+          return <button key={t.id} onClick={function() { setSec(t.id); }} style={{ background: "transparent", border: "none", borderBottom: activeSec === t.id ? "2px solid " + N2 : "2px solid transparent", color: activeSec === t.id ? N2 : TD, padding: "8px 14px", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: FD }}>{t.l}</button>;
+        })}
       </div>
+
+      {activeSec === "succes" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+            <button onClick={function() { setCatF("all"); }} style={{ border: "1px solid " + BD, borderRadius: 8, padding: "4px 10px", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FD, background: catF === "all" ? N1 : S2, color: catF === "all" ? BG : TD }}>Tous</button>
+            {ACH_CATS.map(function(c) { return <button key={c.id} onClick={function() { setCatF(c.id); }} style={{ border: "1px solid " + (catF === c.id ? c.color : BD), borderRadius: 8, padding: "4px 10px", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FD, background: catF === c.id ? c.color + "20" : S2, color: catF === c.id ? c.color : TD }}>{c.name}</button>; })}
+          </div>
+          <div style={{ fontSize: 10, color: TD }}>{ul.length}/{ACHS.length} debloques - {xp} XP total</div>
+          <div style={{ height: 6, borderRadius: 3, background: BD, overflow: "hidden" }}>
+            <div style={{ height: "100%", borderRadius: 3, background: "linear-gradient(90deg, " + N1 + ", " + N2 + ")", width: (ul.length / ACHS.length * 100) + "%" }} />
+          </div>
+          {filtUl.length > 0 && (
+            <NeonCard glow={NG}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: NG, letterSpacing: 2, marginBottom: 8 }}>DEBLOQUES ({filtUl.length})</div>
+              {filtUl.map(function(a) {
+                var ci = ACH_CATS.find(function(c) { return c.id === a.cat; });
+                var tName = a.title ? TITLES.find(function(t) { return t.id === a.title; }) : null;
+                return (
+                  <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 10, background: NG + "06", border: "1px solid " + NG + "15", marginBottom: 4 }}>
+                    <span style={{ fontSize: 20 }}>{a.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, color: TP }}>{a.name}</span>
+                        {ci && <span style={{ fontSize: 8, padding: "1px 5px", borderRadius: 3, background: ci.color + "18", color: ci.color, fontWeight: 600 }}>{ci.name}</span>}
+                      </div>
+                      <div style={{ fontSize: 9, color: TD }}>{a.desc}</div>
+                      {tName && <div style={{ fontSize: 9, color: N2, marginTop: 1 }}>🏷️ Titre : {tName.name}</div>}
+                    </div>
+                    <span style={{ fontSize: 9, color: N1, fontWeight: 700 }}>+{a.xp}</span>
+                  </div>
+                );
+              })}
+            </NeonCard>
+          )}
+          {filtLo.length > 0 && (
+            <NeonCard glow={TD}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: TD, letterSpacing: 2, marginBottom: 8 }}>VERROUILLES ({filtLo.length})</div>
+              {filtLo.map(function(a) {
+                var ci = ACH_CATS.find(function(c) { return c.id === a.cat; });
+                var tName = a.title ? TITLES.find(function(t) { return t.id === a.title; }) : null;
+                return (
+                  <div key={a.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 10, background: S2, border: "1px solid " + BD, marginBottom: 4, opacity: 0.5 }}>
+                    <span style={{ fontSize: 20, filter: "grayscale(1)" }}>{a.icon}</span>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, color: TD }}>{a.name}</span>
+                        {ci && <span style={{ fontSize: 8, padding: "1px 5px", borderRadius: 3, background: ci.color + "10", color: ci.color + "88", fontWeight: 600 }}>{ci.name}</span>}
+                      </div>
+                      <div style={{ fontSize: 9, color: TD }}>{a.desc}</div>
+                      {tName && <div style={{ fontSize: 9, color: TD, marginTop: 1 }}>🏷️ Titre : {tName.name}</div>}
+                    </div>
+                    <span style={{ fontSize: 9, color: TD }}>+{a.xp} 🔒</span>
+                  </div>
+                );
+              })}
+            </NeonCard>
+          )}
+          {hiddenN > 0 && <div style={{ textAlign: "center", padding: 12, fontSize: 10, color: TD, fontStyle: "italic" }}>❓ {hiddenN} succes secrets a decouvrir...</div>}
+        </div>
+      )}
+
+      {activeSec === "custom" && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <NeonCard glow={N2}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: N2, letterSpacing: 2, marginBottom: 10 }}>AVATAR</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {availAv.map(function(em) {
+                var isEx = AVATARS.indexOf(em) === -1;
+                return (
+                  <button key={em} onClick={function() { onUp(pi, Object.assign({}, me, { emoji: em })); }}
+                    style={{ width: 36, height: 36, borderRadius: 8, border: me.emoji === em ? "2px solid " + N1 : isEx ? "1px solid " + N2 + "60" : "1px solid " + BD, background: me.emoji === em ? N1 + "15" : isEx ? N2 + "10" : S2, fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    {em}
+                  </button>
+                );
+              })}
+            </div>
+            {EX_AVATARS.length > availAv.length - AVATARS.length && (
+              <div style={{ fontSize: 9, color: TD, marginTop: 8, fontStyle: "italic" }}>🔒 {EX_AVATARS.length - (availAv.length - AVATARS.length)} avatars exclusifs a debloquer</div>
+            )}
+          </NeonCard>
+
+          <NeonCard glow={N1}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: N1, letterSpacing: 2, marginBottom: 10 }}>COULEUR DE BASE</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 14 }}>
+              {PCOLORS.map(function(co) {
+                return <button key={co} onClick={function() { onUp(pi, Object.assign({}, me, { color: co })); }}
+                  style={{ width: 30, height: 30, borderRadius: "50%", border: me.color === co ? "3px solid #fff" : "2px solid transparent", background: co, cursor: "pointer" }} />;
+              })}
+            </div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: N1, letterSpacing: 2, marginBottom: 10 }}>STYLE DU NOM</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {CSTYLES.map(function(cs) {
+                var avail = availCS.indexOf(cs) !== -1;
+                var active = me.cstyle === cs.id;
+                return (
+                  <button key={cs.id} disabled={!avail}
+                    onClick={function() { if (avail) onUp(pi, Object.assign({}, me, { cstyle: cs.id })); }}
+                    style={{ padding: "8px 12px", borderRadius: 8, border: active ? "2px solid " + N1 : "1px solid " + BD, background: active ? N1 + "10" : S2, cursor: avail ? "pointer" : "not-allowed", textAlign: "left", display: "flex", alignItems: "center", gap: 10, opacity: avail ? 1 : 0.4 }}>
+                    <div style={{ width: 40, height: 18, borderRadius: 4, background: cs.grad || me.color }} />
+                    <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 11, color: active ? N1 : TP }}>{cs.name}</span>
+                    {!avail && <span style={{ marginLeft: "auto", fontSize: 9, color: TD }}>🔒</span>}
+                    {active && <span style={{ marginLeft: "auto", fontSize: 9, color: N1 }}>actif</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </NeonCard>
+
+          <NeonCard glow={"#cd7f32"}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#cd7f32", letterSpacing: 2, marginBottom: 10 }}>ORNEMENT (CADRE AVATAR)</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {ORNAMENTS.map(function(o) {
+                var avail = availOrn.indexOf(o) !== -1;
+                var active = me.ornament === o.id;
+                return (
+                  <button key={o.id} disabled={!avail}
+                    onClick={function() { if (avail) onUp(pi, Object.assign({}, me, { ornament: o.id })); }}
+                    style={{ padding: "8px 12px", borderRadius: 8, border: active ? "2px solid " + (o.color || N1) : "1px solid " + BD, background: active ? (o.color || N1) + "10" : S2, cursor: avail ? "pointer" : "not-allowed", textAlign: "left", display: "flex", alignItems: "center", gap: 10, opacity: avail ? 1 : 0.4 }}>
+                    {o.color && <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid " + o.color, background: o.color + "15", boxShadow: o.style === "glow" ? "0 0 8px " + o.color + "50" : "none" }} />}
+                    {!o.color && <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid " + BD, background: S2 }} />}
+                    <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 11, color: active ? (o.color || N1) : TP }}>{o.name}</span>
+                    {!avail && <span style={{ marginLeft: "auto", fontSize: 9, color: TD }}>🔒</span>}
+                    {active && <span style={{ marginLeft: "auto", fontSize: 9, color: o.color || N1 }}>actif</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </NeonCard>
+
+          <NeonCard glow={"#FFD700"}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#FFD700", letterSpacing: 2, marginBottom: 10 }}>TITRE</div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              {availT.map(function(t) {
+                var isActive = me.title === t.id;
+                return (
+                  <button key={t.id || "none"} onClick={function() { onUp(pi, Object.assign({}, me, { title: t.id })); }}
+                    style={{ padding: "6px 12px", borderRadius: 8, border: isActive ? "2px solid " + N1 : "1px solid " + BD, background: isActive ? N1 + "10" : S2, cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: 8 }}>
+                    <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 11, color: isActive ? N1 : TP }}>{t.name}</span>
+                    {isActive && <span style={{ marginLeft: "auto", fontSize: 9, color: N1 }}>actif</span>}
+                  </button>
+                );
+              })}
+              {TITLES.filter(function(t) { return t.req && availT.indexOf(t) === -1; }).length > 0 && (
+                <div style={{ fontSize: 9, color: TD, marginTop: 4, fontStyle: "italic" }}>🔒 {TITLES.filter(function(t) { return t.req && availT.indexOf(t) === -1; }).length} titres a debloquer via les succes</div>
+              )}
+            </div>
+          </NeonCard>
+        </div>
+      )}
     </div>
   );
 }
 
-/* ── Main App ── */
+/* ═══ MAIN APP ═══ */
 export default function App() {
-  var ms = useState(INIT_MATCHES);
-  var matches = ms[0];
-  var setMatches = ms[1];
-  var ps = useState(INIT_PLAYERS);
-  var players = ps[0];
-  var setPlayers = ps[1];
-  var li = useState(null);
-  var loggedIn = li[0];
-  var setLoggedIn = li[1];
-  var tb = useState("home");
-  var tab = tb[0];
-  var setTab = tb[1];
-  var sp = useState(false);
-  var spoil = sp[0];
-  var setSpoil = sp[1];
-
+  var ms = useState(INIT_M); var matches = ms[0]; var setMatches = ms[1];
+  var ps = useState(INIT_P); var players = ps[0]; var setPlayers = ps[1];
+  var li = useState(null); var loggedIn = li[0]; var setLoggedIn = li[1];
+  var tb = useState("home"); var tab = tb[0]; var setTab = tb[1];
+  var sp = useState(false); var spoil = sp[0]; var setSpoil = sp[1];
   var isAdmin = loggedIn === "__admin";
   var currentUser = isAdmin ? "Ulysse" : loggedIn;
-  var me = players.find(function(p) { return p.name === currentUser; });
 
   function handleUpdate(mid, player, field, value) {
-    setMatches(function(prev) {
-      return prev.map(function(m) {
-        if (m.id !== mid) return m;
-        if (player === "__result") {
-          var copy = Object.assign({}, m);
-          copy[field] = value;
-          return copy;
-        }
-        var newPreds = Object.assign({}, m.preds);
-        newPreds[player] = Object.assign({}, newPreds[player] || {});
-        newPreds[player][field] = value;
-        return Object.assign({}, m, { preds: newPreds });
-      });
-    });
+    setMatches(function(prev) { return prev.map(function(m) {
+      if (m.id !== mid) return m;
+      if (player === "__result") { var c = Object.assign({}, m); c[field] = value; return c; }
+      var np = Object.assign({}, m.preds);
+      np[player] = Object.assign({}, np[player] || {});
+      np[player][field] = value;
+      return Object.assign({}, m, { preds: np });
+    }); });
   }
 
-  function handleUpdatePlayer(i, p) {
-    setPlayers(function(prev) {
-      var n = prev.slice();
-      n[i] = p;
-      return n;
-    });
-  }
+  function handleUpdatePlayer(i, p) { setPlayers(function(prev) { var n = prev.slice(); n[i] = p; return n; }); }
 
   if (!loggedIn) return <LoginScreen players={players} onLogin={setLoggedIn} />;
 
@@ -756,51 +1062,36 @@ export default function App() {
   ];
 
   return (
-    <div style={{ background: BG, color: TP, fontFamily: FB, minHeight: "100vh" }}>
+    <div style={{ background: BG, color: TP, fontFamily: FB, minHeight: "100vh", position: "relative", overflow: "hidden" }}>
+      <style>{CSS_ANIM}</style>
       <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      <div style={{ position: "fixed", top: -300, right: -200, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, " + N1 + "04, transparent 70%)", pointerEvents: "none" }} />
+      <div style={{ position: "fixed", bottom: -300, left: -200, width: 600, height: 600, borderRadius: "50%", background: "radial-gradient(circle, " + N2 + "04, transparent 70%)", pointerEvents: "none" }} />
 
-      {/* Header */}
       <div style={{ padding: "14px 16px 0", maxWidth: 660, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
           <div style={{ cursor: "pointer" }} onClick={function() { setTab("home"); }}>
-            <h1 style={{ fontFamily: FD, fontSize: 20, fontWeight: 800, margin: 0, letterSpacing: 2, color: AC }}>LEC PRONOS</h1>
+            <h1 style={{ fontFamily: FD, fontSize: 20, fontWeight: 800, margin: 0, letterSpacing: 3, color: N1, textShadow: "0 0 20px " + N1 + "30" }}>LEC PRONOS</h1>
           </div>
           <div style={{ display: "flex", gap: 5, alignItems: "center" }}>
-            <button onClick={function() { setSpoil(!spoil); }}
-              style={{ background: spoil ? "#e8364f18" : S2, border: "1px solid " + (spoil ? "#e8364f33" : BD), borderRadius: 8, padding: "5px 8px", fontSize: 10, fontWeight: 600, color: spoil ? "#e8364f" : TD, cursor: "pointer" }}>
-              {spoil ? "🔒" : "👁️"}
-            </button>
-            {isAdmin && <span style={{ fontSize: 9, padding: "3px 6px", borderRadius: 4, background: AC, color: "#000", fontWeight: 700 }}>ADMIN</span>}
-            <button onClick={function() { setLoggedIn(null); }}
-              style={{ background: S2, border: "1px solid " + BD, borderRadius: 8, padding: "5px 8px", fontSize: 9, fontWeight: 600, color: TD, cursor: "pointer" }}>
-              Quitter
-            </button>
+            <button onClick={function() { setSpoil(!spoil); }} style={{ background: spoil ? N3 + "18" : S2, border: "1px solid " + (spoil ? N3 + "40" : BD), borderRadius: 8, padding: "5px 8px", fontSize: 10, fontWeight: 600, color: spoil ? N3 : TD, cursor: "pointer" }}>{spoil ? "🔒" : "👁️"}</button>
+            {isAdmin && <span style={{ fontSize: 9, padding: "3px 6px", borderRadius: 4, background: N1, color: BG, fontWeight: 700 }}>ADMIN</span>}
+            <button onClick={function() { setLoggedIn(null); }} style={{ background: S2, border: "1px solid " + BD, borderRadius: 8, padding: "5px 8px", fontSize: 9, fontWeight: 600, color: TD, cursor: "pointer" }}>Quitter</button>
           </div>
         </div>
-
         {spoil && (
-          <div style={{ margin: "8px 0 0", padding: "5px 12px", borderRadius: 8, background: "#e8364f12", border: "1px solid #e8364f25", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-            <span style={{ fontSize: 10, color: "#e8364f", fontWeight: 600 }}>🔒 Anti-spoil actif</span>
-            <button onClick={function() { setSpoil(false); }}
-              style={{ background: "#e8364f", color: "#fff", border: "none", borderRadius: 5, padding: "2px 8px", fontSize: 9, fontWeight: 600, cursor: "pointer" }}>
-              Off
-            </button>
+          <div style={{ margin: "8px 0 0", padding: "5px 12px", borderRadius: 8, background: N3 + "10", border: "1px solid " + N3 + "25", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <span style={{ fontSize: 10, color: N3, fontWeight: 600 }}>🔒 Anti-spoil actif</span>
+            <button onClick={function() { setSpoil(false); }} style={{ background: N3, color: "#fff", border: "none", borderRadius: 5, padding: "2px 8px", fontSize: 9, fontWeight: 600, cursor: "pointer" }}>Off</button>
           </div>
         )}
-
         <div style={{ display: "flex", gap: 0, marginTop: 10, borderBottom: "1px solid " + BD }}>
           {navItems.map(function(n) {
-            return (
-              <button key={n.id} onClick={function() { setTab(n.id); }}
-                style={{ background: "transparent", border: "none", borderBottom: tab === n.id ? "2px solid " + AC : "2px solid transparent", color: tab === n.id ? AC : TD, padding: "8px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: FD, letterSpacing: 1 }}>
-                {n.icon} {n.label}
-              </button>
-            );
+            return <button key={n.id} onClick={function() { setTab(n.id); }} style={{ background: "transparent", border: "none", borderBottom: tab === n.id ? "2px solid " + N1 : "2px solid transparent", color: tab === n.id ? N1 : TD, padding: "8px 10px", fontSize: 11, fontWeight: 600, cursor: "pointer", fontFamily: FD, letterSpacing: 1 }}>{n.icon} {n.label}</button>;
           })}
         </div>
       </div>
 
-      {/* Content */}
       <div style={{ padding: "14px 16px 70px", maxWidth: 660, margin: "0 auto" }}>
         {tab === "home" && <Dashboard matches={matches} players={players} currentUser={currentUser} onNav={setTab} spoil={spoil} />}
         {tab === "matches" && <MatchesPage matches={matches} players={players} onUpdate={handleUpdate} currentUser={currentUser} isAdmin={isAdmin} spoil={spoil} />}
