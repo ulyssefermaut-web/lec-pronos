@@ -17,17 +17,17 @@ var CSS_ANIM = "@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}@keyframes sl
 
 /* ═══ TEAMS ═══ */
 var TI = {
-  "G2 Esports": { s: "G2", c: "#aaa", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2FG2-FullonDark.png" },
-  "SK Gaming": { s: "SK", c: "#0088cc", logo: "https://liquipedia.net/commons/images/thumb/0/04/SK_Gaming_2024_full_allmode.png/120px-SK_Gaming_2024_full_allmode.png" },
-  "Heretics": { s: "TH", c: "#ff4655", logo: "https://liquipedia.net/commons/images/thumb/c/cb/Team_Heretics_2024_full_allmode.png/120px-Team_Heretics_2024_full_allmode.png" },
-  "NaVi": { s: "NAVI", c: "#ffd700", logo: "https://liquipedia.net/commons/images/thumb/a/a4/Natus_Vincere_2024_lightmode.png/120px-Natus_Vincere_2024_lightmode.png" },
-  "GIANTX": { s: "GX", c: "#00c8ff", logo: "https://liquipedia.net/commons/images/thumb/d/d1/GiantX_allmode.png/120px-GiantX_allmode.png" },
-  "Fnatic": { s: "FNC", c: "#ff5900", logo: "https://liquipedia.net/commons/images/thumb/f/f0/Fnaticlogo.png/120px-Fnaticlogo.png" },
-  "Shifters": { s: "SHFT", c: "#6c5ce7", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1765897071435_600px-Shifters_allmode.png" },
-  "Vitality": { s: "VIT", c: "#fee800", logo: "https://liquipedia.net/commons/images/thumb/3/38/Team_Vitality_2023_full_darkmode.png/120px-Team_Vitality_2023_full_darkmode.png" },
-  "KCorp": { s: "KC", c: "#4a90d9", logo: "https://liquipedia.net/commons/images/thumb/1/10/Karmine_Corp_2024_allmode.png/120px-Karmine_Corp_2024_allmode.png" },
-  "KOI": { s: "KOI", c: "#00a6ff", logo: "https://am-a.akamaihd.net/image?resize=120:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1734012609283_MKOI_FullColor_Blue.png" },
-  "Los Ratones": { s: "LR", c: "#c87533", logo: "https://liquipedia.net/commons/images/thumb/e/e5/Los_Ratones_allmode.png/120px-Los_Ratones_allmode.png" },
+  "G2 Esports": { s: "G2", c: "#aaa", logo: "https://am-a.akamaihd.net/image?resize=400:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2FG2-FullonDark.png" },
+  "SK Gaming": { s: "SK", c: "#0088cc", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdKjXicEX8L3YkfFpXZuIiAdNMpDjxwU22Mw&s" },
+  "Heretics": { s: "TH", c: "#ff4655", logo: "https://upload.wikimedia.org/wikipedia/fr/thumb/6/69/Team_Heretics.png/960px-Team_Heretics.png" },
+  "NaVi": { s: "NAVI", c: "#ffd700", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRpbImGrO5A3aACm3w56cembiByHoklvHzhQ&s" },
+  "GIANTX": { s: "GX", c: "#00c8ff", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/0/0e/GiantX_logo.svg/330px-GiantX_logo.svg.png" },
+  "Fnatic": { s: "FNC", c: "#ff5900", logo: "https://upload.wikimedia.org/wikipedia/fr/f/f4/Fnatic-Logo-2020.svg" },
+  "Shifters": { s: "SHFT", c: "#6c5ce7", logo: "https://am-a.akamaihd.net/image?resize=400:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1765897071435_600px-Shifters_allmode.png" },
+  "Vitality": { s: "VIT", c: "#fee800", logo: "https://liquipedia.net/commons/images/thumb/5/55/Team_Vitality_2021_allmode.png/600px-Team_Vitality_2021_allmode.png" },
+  "KCorp": { s: "KC", c: "#4a90d9", logo: "https://upload.wikimedia.org/wikipedia/commons/9/96/Karmine_Corp_logo.svg" },
+  "KOI": { s: "KOI", c: "#00a6ff", logo: "https://am-a.akamaihd.net/image?resize=400:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1734012609283_MKOI_FullColor_Blue.png" },
+  "Los Ratones": { s: "LR", c: "#c87533", logo: "https://upload.wikimedia.org/wikipedia/en/4/41/Los_Ratones_logo.png" },
 };
 
 /* ═══ PLAYERS ═══ */
