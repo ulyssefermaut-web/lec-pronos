@@ -1,4 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
+
+var supabase = createClient(
+  "https://wokhcfcbkbvekcvyltci.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indva2hjZmNia2J2ZWtjdnlsdGNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2Mjk4ODcsImV4cCI6MjA5MjIwNTg4N30.oe7dXTkxKje1w6ClLDiAjuyITOaWYU1jjzRyZ03ORU4"
+);
 
 /* ═══ THEME ═══ */
 var BG = "#06060e";
@@ -1426,15 +1432,91 @@ function ProfilePage(props) {
 
 /* ═══ MAIN APP ═══ */
 export default function App() {
-  var ms = useState(INIT_M); var matches = ms[0]; var setMatches = ms[1];
-  var ps = useState(INIT_P); var players = ps[0]; var setPlayers = ps[1];
+  var ms = useState([]); var matches = ms[0]; var setMatches = ms[1];
+  var ps = useState([]); var players = ps[0]; var setPlayers = ps[1];
   var li = useState(null); var loggedIn = li[0]; var setLoggedIn = li[1];
   var tb = useState("home"); var tab = tb[0]; var setTab = tb[1];
   var sp = useState(false); var spoil = sp[0]; var setSpoil = sp[1];
+  var ld = useState(true); var loading = ld[0]; var setLoading = ld[1];
   var isAdmin = loggedIn === "__admin";
   var currentUser = isAdmin ? "Ulysse" : loggedIn;
 
+  /* Load data from Supabase on mount */
+  useEffect(function() {
+    loadData();
+    /* Subscribe to realtime changes */
+    var channel = supabase.channel("realtime-all")
+      .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, function() { loadData(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "preds" }, function() { loadData(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "players" }, function() { loadData(); })
+      .subscribe();
+    return function() { supabase.removeChannel(channel); };
+  }, []);
+
+  function loadData() {
+    Promise.all([
+      supabase.from("players").select("*").order("id"),
+      supabase.from("matches").select("*").order("id"),
+      supabase.from("preds").select("*"),
+    ]).then(function(results) {
+      var pData = results[0].data || [];
+      var mData = results[1].data || [];
+      var prData = results[2].data || [];
+
+      /* Build players array */
+      var builtPlayers = pData.map(function(p) {
+        return {
+          name: p.name, color: p.color || "#e8364f", emoji: p.emoji || "🦁",
+          pin: p.pin || "1111", title: p.title || null,
+          ornament: p.ornament || "none", cstyle: p.cstyle || "solid",
+          previewMode: false,
+        };
+      });
+
+      /* Build matches with preds nested */
+      var builtMatches = mData.map(function(m) {
+        var preds = {};
+        prData.forEach(function(pr) {
+          if (pr.match_id === m.id) {
+            preds[pr.player_name] = { winner: pr.winner, score: pr.score };
+          }
+        });
+        return {
+          id: m.id, week: m.week, day: m.day, team1: m.team1, team2: m.team2,
+          bo: m.bo, cote1: m.cote1, cote2: m.cote2,
+          winner: m.winner, score: m.score, preds: preds,
+        };
+      });
+
+      setPlayers(builtPlayers);
+      setMatches(builtMatches);
+      setLoading(false);
+    });
+  }
+
   function handleUpdate(mid, player, field, value) {
+    if (player === "__result") {
+      /* Admin updating match result */
+      var updateObj = {};
+      updateObj[field] = value;
+      supabase.from("matches").update(updateObj).eq("id", mid).then(function() { loadData(); });
+    } else {
+      /* Player updating their prediction */
+      /* First check if pred exists */
+      supabase.from("preds").select("*").eq("match_id", mid).eq("player_name", player).then(function(res) {
+        var existing = res.data && res.data.length > 0;
+        if (existing) {
+          var upd = {};
+          upd[field] = value;
+          supabase.from("preds").update(upd).eq("match_id", mid).eq("player_name", player).then(function() { loadData(); });
+        } else {
+          var ins = { match_id: mid, player_name: player, winner: null, score: null };
+          ins[field] = value;
+          supabase.from("preds").insert(ins).then(function() { loadData(); });
+        }
+      });
+    }
+    /* Optimistic local update */
     setMatches(function(prev) { return prev.map(function(m) {
       if (m.id !== mid) return m;
       if (player === "__result") { var c = Object.assign({}, m); c[field] = value; return c; }
@@ -1445,7 +1527,26 @@ export default function App() {
     }); });
   }
 
-  function handleUpdatePlayer(i, p) { setPlayers(function(prev) { var n = prev.slice(); n[i] = p; return n; }); }
+  function handleUpdatePlayer(i, p) {
+    /* Save to Supabase */
+    supabase.from("players").update({
+      color: p.color, emoji: p.emoji, title: p.title,
+      ornament: p.ornament, cstyle: p.cstyle,
+    }).eq("name", p.name).then(function() {});
+    /* Optimistic local update */
+    setPlayers(function(prev) { var n = prev.slice(); n[i] = p; return n; });
+  }
+
+  if (loading) {
+    return (
+      <div style={{ minHeight: "100vh", background: BG, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: FB, color: TP }}>
+        <style>{CSS_ANIM}</style>
+        <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@400;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <h1 style={{ fontFamily: FD, fontSize: 28, fontWeight: 800, color: N1, letterSpacing: 3, marginBottom: 12 }}>LEC PRONOS</h1>
+        <div style={{ fontSize: 12, color: TD }}>Chargement...</div>
+      </div>
+    );
+  }
 
   if (!loggedIn) return <LoginScreen players={players} onLogin={setLoggedIn} />;
 
