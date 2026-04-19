@@ -22,10 +22,10 @@ var TI = {
   "Heretics": { s: "TH", c: "#ff4655", logo: "https://upload.wikimedia.org/wikipedia/fr/thumb/6/69/Team_Heretics.png/960px-Team_Heretics.png" },
   "NaVi": { s: "NAVI", c: "#ffd700", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRpbImGrO5A3aACm3w56cembiByHoklvHzhQ&s" },
   "GIANTX": { s: "GX", c: "#00c8ff", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/0/0e/GiantX_logo.svg/330px-GiantX_logo.svg.png" },
-  "Fnatic": { s: "FNC", c: "#ff5900", logo: "https://upload.wikimedia.org/wikipedia/fr/f/f4/Fnatic-Logo-2020.svg" },
+  "Fnatic": { s: "FNC", c: "#ff5900", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/4/43/Esports_organization_Fnatic_logo.svg/300px-Esports_organization_Fnatic_logo.svg.png" },
   "Shifters": { s: "SHFT", c: "#6c5ce7", logo: "https://am-a.akamaihd.net/image?resize=400:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1765897071435_600px-Shifters_allmode.png" },
-  "Vitality": { s: "VIT", c: "#fee800", logo: "https://liquipedia.net/commons/images/thumb/5/55/Team_Vitality_2021_allmode.png/600px-Team_Vitality_2021_allmode.png" },
-  "KCorp": { s: "KC", c: "#4a90d9", logo: "https://upload.wikimedia.org/wikipedia/commons/9/96/Karmine_Corp_logo.svg" },
+  "Vitality": { s: "VIT", c: "#fee800", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/8/86/Team_Vitality_%28esports%29_logo.svg/250px-Team_Vitality_%28esports%29_logo.svg.png" },
+  "KCorp": { s: "KC", c: "#4a90d9", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Karmine_Corp_logo.svg/250px-Karmine_Corp_logo.svg.png" },
   "KOI": { s: "KOI", c: "#00a6ff", logo: "https://am-a.akamaihd.net/image?resize=400:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1734012609283_MKOI_FullColor_Blue.png" },
   "Los Ratones": { s: "LR", c: "#c87533", logo: "https://upload.wikimedia.org/wikipedia/en/4/41/Los_Ratones_logo.png" },
 };
@@ -34,14 +34,18 @@ var TI = {
 var AVATARS = ["🦁","⚔️","🐉","🏰","🎯","🔥","💎","🌟","🐺","🦅","🎮","👑","⚡","🛡️","🗡️","🦊","🐍","🦈","🌙","🎲","🃏","🧙","🤖","👹","🐲","🎪"];
 var PCOLORS = ["#e8364f","#3b82f6","#10b981","#f59e0b","#a855f7","#ec4899","#06b6d4","#84cc16","#f97316","#6366f1","#14b8a6","#e11d48"];
 
-/* Exclusive avatars unlocked by achievements */
+/* Exclusive SVG avatars unlocked by achievements */
 var EX_AVATARS = [
-  { emoji: "🏆", req: "wins_250" },
-  { emoji: "☄️", req: "streak_15" },
-  { emoji: "🌌", req: "perfects_25" },
-  { emoji: "💀", req: "leg_wins" },
-  { emoji: "👁️", req: "wr85" },
-  { emoji: "🎭", req: "upsets_25" },
+  { id: "svg_dragon", name: "Dragon", req: "perfects_25", color: "#a855f7" },
+  { id: "svg_swords", name: "Lames", req: "wins_100", color: "#f43f5e" },
+  { id: "svg_crown", name: "Couronne", req: "wins_250", color: "#ffd700" },
+  { id: "svg_eye", name: "Oracle", req: "wr85", color: "#00f0ff" },
+  { id: "svg_mask", name: "Chaos", req: "upsets_25", color: "#f97316" },
+  { id: "svg_shield", name: "Bouclier", req: "games_100", color: "#3b82f6" },
+  { id: "svg_potion", name: "Potion", req: "games_200", color: "#10b981" },
+  { id: "svg_stars", name: "Constellation", req: "pts_500", color: "#fbbf24" },
+  { id: "svg_serpent", name: "Serpent", req: "leg_wins", color: "#7c3aed" },
+  { id: "svg_phoenix", name: "Phoenix", req: "streak_15", color: "#f59e0b" },
 ];
 
 /* Ornaments (avatar frames) */
@@ -54,8 +58,12 @@ var ORNAMENTS = [
   { id: "diamond", name: "Diamond", req: "rank_dia1", color: "#a855f7", style: "double" },
   { id: "master", name: "Master", req: "rank_master1", color: "#f43f5e", style: "double" },
   { id: "chall", name: "Challenger", req: "rank_chall1", color: "#ff6b35", style: "glow" },
-  { id: "flame", name: "Flammes", req: "streak_15", color: "#ff6b35", style: "glow" },
-  { id: "cosmic", name: "Cosmique", req: "perfects_25", color: "#a855f7", style: "glow" },
+  { id: "flame", name: "Flammes", req: "streak_15", color: "#ff6b35", style: "special" },
+  { id: "cosmic", name: "Cosmique", req: "perfects_25", color: "#a855f7", style: "special" },
+  { id: "hextech", name: "Hextech", req: "leg_wins", color: "#00f0ff", style: "special" },
+  { id: "glacial", name: "Glacial", req: "wr85", color: "#67e8f9", style: "special" },
+  { id: "abyssal", name: "Abyssal", req: "upsets_25", color: "#6366f1", style: "special" },
+  { id: "infernal", name: "Infernal", req: "streak_20", color: "#dc2626", style: "special" },
 ];
 
 /* Color name styles */
@@ -358,10 +366,10 @@ function getAllIds(s) {
   return ids;
 }
 
-function getAvailAvatars(ids) {
+function getAvailAvatars(ids, preview) {
   var avail = AVATARS.slice();
   EX_AVATARS.forEach(function(ea) {
-    if (ids.indexOf(ea.req) !== -1) avail.push(ea.emoji);
+    if (ids.indexOf(ea.req) !== -1 || preview) avail.push(ea.id);
   });
   return avail;
 }
@@ -437,18 +445,347 @@ function TitleTag(props) {
   );
 }
 
-/* Avatar with ornament frame */
+/* Avatar with hexagonal rank frame */
 function PlayerAvatar(props) {
   var player = props.player;
   var sz = props.size || 48;
-  var orn = ORNAMENTS.find(function(o) { return o.id === player.ornament; }) || ORNAMENTS[0];
-  var borderW = orn.style === "double" ? 4 : orn.style === "glow" ? 3 : 3;
-  var borderC = orn.color || player.color + "40";
-  var shadow = orn.style === "glow" ? "0 0 12px " + orn.color + "60, 0 0 25px " + orn.color + "30" : orn.color ? "0 0 10px " + orn.color + "25" : "0 0 15px " + player.color + "15";
-  var outline = orn.style === "double" ? "2px solid " + orn.color + "40" : "none";
+  var ri = props.rankInfo;
+  var rankColor = ri ? ri.rank.color : player.color;
+  var tierName = ri ? ri.rank.tier : "Bronze";
+
+  /* Scale factor based on size */
+  var s = sz / 100;
+  var vb = "0 0 100 100";
+
+  /* Determine tier level for visual complexity */
+  var tierLevel = 0;
+  if (tierName === "Bronze") tierLevel = 1;
+  else if (tierName === "Silver") tierLevel = 2;
+  else if (tierName === "Gold") tierLevel = 3;
+  else if (tierName === "Platinum") tierLevel = 4;
+  else if (tierName === "Diamond") tierLevel = 5;
+  else if (tierName === "Master") tierLevel = 6;
+  else if (tierName === "Challenger") tierLevel = 7;
+
+  /* Hex points helper centered at 50,50 */
+  var hexOuter = "50,8 86.4,29 86.4,71 50,92 13.6,71 13.6,29";
+  var hexMid = "50,12 83,31 83,69 50,88 17,69 17,31";
+  var hexInner = "50,18 77.7,35 77.7,65 50,82 22.3,65 22.3,35";
+
   return (
-    <div style={{ width: sz, height: sz, borderRadius: "50%", background: player.color + "15", display: "flex", alignItems: "center", justifyContent: "center", fontSize: sz * 0.52, border: borderW + "px solid " + borderC, boxShadow: shadow, outline: outline, outlineOffset: 2, flexShrink: 0 }}>
-      {player.emoji}
+    <div style={{ width: sz, height: sz, flexShrink: 0, position: "relative" }}>
+      <svg viewBox={vb} width={sz} height={sz} style={{ position: "absolute", top: 0, left: 0 }}>
+        {/* Iron: simple single hex */}
+        {tierLevel <= 0 && (
+          <polygon points={hexMid} fill={S1} stroke={rankColor} strokeWidth="2.5" />
+        )}
+
+        {/* Bronze: hex with corner dots */}
+        {tierLevel === 1 && (
+          <g>
+            <polygon points={hexMid} fill="none" stroke={rankColor} strokeWidth="3" />
+            <polygon points={hexInner} fill={S1} />
+            <circle cx="50" cy="12" r="3" fill={rankColor} opacity=".5" />
+          </g>
+        )}
+
+        {/* Silver: double hex + top accent */}
+        {tierLevel === 2 && (
+          <g>
+            <polygon points={hexOuter} fill="none" stroke={rankColor} strokeWidth="1.5" opacity=".4" />
+            <polygon points={hexMid} fill="none" stroke={rankColor} strokeWidth="3" />
+            <polygon points={hexInner} fill={S1} />
+            <path d="M42,12L50,4L58,12" fill="none" stroke={rankColor} strokeWidth="1.5" strokeLinecap="round" />
+          </g>
+        )}
+
+        {/* Gold: hex + crown */}
+        {tierLevel === 3 && (
+          <g>
+            <polygon points={hexOuter} fill="none" stroke={rankColor} strokeWidth="1.5" opacity=".3" />
+            <polygon points={hexMid} fill="none" stroke={rankColor} strokeWidth="3" />
+            <polygon points={hexInner} fill={S1} />
+            <path d="M38,10L44,0L50,8L56,0L62,10" fill="none" stroke={rankColor} strokeWidth="2" strokeLinejoin="round" />
+            <circle cx="44" cy="0" r="2.5" fill={rankColor} />
+            <circle cx="50" cy="8" r="2" fill={rankColor} />
+            <circle cx="56" cy="0" r="2.5" fill={rankColor} />
+          </g>
+        )}
+
+        {/* Platinum: hex + blade + dashed ring */}
+        {tierLevel === 4 && (
+          <g>
+            <polygon points={hexOuter} fill="none" stroke={rankColor} strokeWidth="1" opacity=".25" strokeDasharray="4 3">
+              <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="20s" repeatCount="indefinite" />
+            </polygon>
+            <polygon points={hexMid} fill="none" stroke={rankColor} strokeWidth="3" />
+            <polygon points={hexInner} fill={S1} />
+            <path d="M50,12L46,0L50,4L54,0Z" fill={rankColor} opacity=".6" />
+          </g>
+        )}
+
+        {/* Diamond: hex + gems + sparkles */}
+        {tierLevel === 5 && (
+          <g>
+            <polygon points="50,4 90.6,27 90.6,73 50,96 9.4,73 9.4,27" fill="none" stroke={rankColor} strokeWidth="1" opacity=".2" strokeDasharray="6 4">
+              <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="25s" repeatCount="indefinite" />
+            </polygon>
+            <polygon points={hexOuter} fill="none" stroke={rankColor} strokeWidth="1.5" opacity=".4" />
+            <polygon points={hexMid} fill="none" stroke={rankColor} strokeWidth="3.5" />
+            <polygon points={hexInner} fill={S1} />
+            <polygon points="50,8 47,12 50,16 53,12" fill={rankColor} opacity=".7" />
+            <circle cx="12" cy="35" r="1.5" fill={rankColor} opacity=".5">
+              <animate attributeName="opacity" values=".3;.8;.3" dur="2s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="88" cy="35" r="1.5" fill={rankColor} opacity=".5">
+              <animate attributeName="opacity" values=".3;.8;.3" dur="2.5s" repeatCount="indefinite" />
+            </circle>
+          </g>
+        )}
+
+        {/* Master: triple hex + sword + wings */}
+        {tierLevel === 6 && (
+          <g>
+            <polygon points="50,4 90.6,27 90.6,73 50,96 9.4,73 9.4,27" fill="none" stroke={rankColor} strokeWidth="1" opacity=".15" />
+            <polygon points={hexOuter} fill="none" stroke={rankColor} strokeWidth="1.5" opacity=".35" />
+            <polygon points={hexMid} fill="none" stroke={rankColor} strokeWidth="3.5" />
+            <polygon points={hexInner} fill={S1} />
+            <line x1="50" y1="12" x2="50" y2="-4" stroke={rankColor} strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M46,-2L50,-8L54,-2" fill={rankColor} opacity=".8" />
+            <line x1="44" y1="4" x2="56" y2="4" stroke={rankColor} strokeWidth="2" strokeLinecap="round" />
+            <path d="M86.4,29Q96,24 98,32Q94,36 88,34" fill="none" stroke={rankColor} strokeWidth="1.5" strokeLinecap="round" opacity=".5" />
+            <path d="M13.6,29Q4,24 2,32Q6,36 12,34" fill="none" stroke={rankColor} strokeWidth="1.5" strokeLinecap="round" opacity=".5" />
+            <circle cx="45" cy="-2" r="2" fill={rankColor} opacity=".6">
+              <animate attributeName="opacity" values=".2;.8;.2" dur="2s" repeatCount="indefinite" />
+            </circle>
+          </g>
+        )}
+
+        {/* Challenger: rotating rings + dragon wings + blade + orbiting particles */}
+        {tierLevel === 7 && (
+          <g>
+            <polygon points="50,0 93.3,25 93.3,75 50,100 6.7,75 6.7,25" fill="none" stroke={rankColor} strokeWidth="1" strokeDasharray="3 5" opacity=".3">
+              <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="15s" repeatCount="indefinite" />
+            </polygon>
+            <polygon points="50,4 90.6,27 90.6,73 50,96 9.4,73 9.4,27" fill="none" stroke={rankColor} strokeWidth="1" strokeDasharray="5 3" opacity=".25">
+              <animateTransform attributeName="transform" type="rotate" values="360 50 50;0 50 50" dur="12s" repeatCount="indefinite" />
+            </polygon>
+            <polygon points={hexOuter} fill="none" stroke={rankColor} strokeWidth="1.5" opacity=".5" />
+            <polygon points={hexMid} fill="none" stroke={rankColor} strokeWidth="3.5" />
+            <polygon points={hexInner} fill={S1} />
+            <path d="M86.4,29Q98,22 102,32Q96,38 90,36" fill="none" stroke={rankColor} strokeWidth="2" strokeLinecap="round" opacity=".7" />
+            <path d="M102,32Q104,40 100,44" fill="none" stroke={rankColor} strokeWidth="1.5" strokeLinecap="round" opacity=".4" />
+            <path d="M13.6,29Q2,22 -2,32Q4,38 10,36" fill="none" stroke={rankColor} strokeWidth="2" strokeLinecap="round" opacity=".7" />
+            <path d="M-2,32Q-4,40 0,44" fill="none" stroke={rankColor} strokeWidth="1.5" strokeLinecap="round" opacity=".4" />
+            <line x1="50" y1="12" x2="50" y2="-6" stroke={rankColor} strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M46,0L50,-8L54,0" fill={rankColor} opacity=".8" />
+            <line x1="44" y1="4" x2="56" y2="4" stroke={rankColor} strokeWidth="2" strokeLinecap="round" opacity=".6" />
+            <g>
+              <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="6s" repeatCount="indefinite" />
+              <circle cx="96" cy="50" r="2.5" fill={rankColor}>
+                <animate attributeName="opacity" values=".5;1;.5" dur="1s" repeatCount="indefinite" />
+              </circle>
+              <circle cx="4" cy="50" r="2" fill={rankColor}>
+                <animate attributeName="opacity" values=".5;1;.5" dur="1s" begin=".3s" repeatCount="indefinite" />
+              </circle>
+              <circle cx="50" cy="96" r="2" fill={rankColor}>
+                <animate attributeName="opacity" values=".5;1;.5" dur="1s" begin=".6s" repeatCount="indefinite" />
+              </circle>
+            </g>
+          </g>
+        )}
+
+        {/* Special ornament overlays */}
+        {player.ornament === "flame" && (
+          <g>
+            <g><animate attributeName="opacity" values=".5;.9;.5" dur="1.5s" repeatCount="indefinite" /><path d="M50,8Q46,-4 50,-10Q54,-4 50,8" fill="#ff6b35" opacity=".7" /></g>
+            <g><animate attributeName="opacity" values=".4;.8;.4" dur="1.5s" begin=".3s" repeatCount="indefinite" /><path d="M86.4,29Q92,20 94,28Q90,32 86.4,29" fill="#f97316" opacity=".5" /></g>
+            <g><animate attributeName="opacity" values=".4;.8;.4" dur="1.5s" begin=".6s" repeatCount="indefinite" /><path d="M86.4,71Q92,80 94,72Q90,68 86.4,71" fill="#ff6b35" opacity=".5" /></g>
+            <g><animate attributeName="opacity" values=".5;.9;.5" dur="1.5s" begin=".9s" repeatCount="indefinite" /><path d="M50,92Q46,104 50,110Q54,104 50,92" fill="#f97316" opacity=".7" /></g>
+            <g><animate attributeName="opacity" values=".4;.8;.4" dur="1.5s" begin="1.2s" repeatCount="indefinite" /><path d="M13.6,71Q8,80 6,72Q10,68 13.6,71" fill="#ff6b35" opacity=".5" /></g>
+            <g><animate attributeName="opacity" values=".4;.8;.4" dur="1.5s" begin=".15s" repeatCount="indefinite" /><path d="M13.6,29Q8,20 6,28Q10,32 13.6,29" fill="#f97316" opacity=".5" /></g>
+          </g>
+        )}
+
+        {player.ornament === "cosmic" && (
+          <g>
+            <ellipse cx="50" cy="50" rx="56" ry="22" fill="none" stroke="#a855f7" strokeWidth="0.8" opacity=".3" transform="rotate(-25, 50, 50)">
+              <animateTransform attributeName="transform" type="rotate" values="-25 50 50;335 50 50" dur="18s" repeatCount="indefinite" />
+            </ellipse>
+            <ellipse cx="50" cy="50" rx="54" ry="20" fill="none" stroke="#7c3aed" strokeWidth="0.8" opacity=".25" transform="rotate(35, 50, 50)">
+              <animateTransform attributeName="transform" type="rotate" values="35 50 50;-325 50 50" dur="22s" repeatCount="indefinite" />
+            </ellipse>
+            <circle cx="10" cy="24" r="1.5" fill="#c084fc"><animate attributeName="opacity" values=".3;.8;.3" dur="3s" repeatCount="indefinite" /></circle>
+            <circle cx="90" cy="76" r="1.5" fill="#a855f7"><animate attributeName="opacity" values=".3;.8;.3" dur="3s" begin="1s" repeatCount="indefinite" /></circle>
+            <circle cx="85" cy="20" r="1" fill="#c084fc"><animate attributeName="opacity" values=".3;.8;.3" dur="3s" begin="2s" repeatCount="indefinite" /></circle>
+          </g>
+        )}
+
+        {player.ornament === "hextech" && (
+          <g>
+            <path d="M68,16L72,10L70,16L76,14" fill="none" stroke="#00f0ff" strokeWidth="1.8" strokeLinecap="round" opacity=".7">
+              <animate attributeName="opacity" values=".4;.9;.4" dur=".8s" repeatCount="indefinite" />
+            </path>
+            <path d="M32,16L28,10L30,16L24,14" fill="none" stroke="#22d3ee" strokeWidth="1.8" strokeLinecap="round" opacity=".7">
+              <animate attributeName="opacity" values=".4;.9;.4" dur=".8s" begin=".4s" repeatCount="indefinite" />
+            </path>
+            <path d="M92,50L98,48L94,52L100,52" fill="none" stroke="#00f0ff" strokeWidth="1.5" strokeLinecap="round" opacity=".6">
+              <animate attributeName="opacity" values=".3;.8;.3" dur="1s" begin=".2s" repeatCount="indefinite" />
+            </path>
+            <path d="M8,50L2,48L6,52L0,52" fill="none" stroke="#22d3ee" strokeWidth="1.5" strokeLinecap="round" opacity=".6">
+              <animate attributeName="opacity" values=".3;.8;.3" dur="1s" begin=".6s" repeatCount="indefinite" />
+            </path>
+            <path d="M68,84L72,90L70,84L76,86" fill="none" stroke="#00f0ff" strokeWidth="1.5" strokeLinecap="round" opacity=".5">
+              <animate attributeName="opacity" values=".3;.7;.3" dur="1s" begin=".3s" repeatCount="indefinite" />
+            </path>
+            <path d="M32,84L28,90L30,84L24,86" fill="none" stroke="#22d3ee" strokeWidth="1.5" strokeLinecap="round" opacity=".5">
+              <animate attributeName="opacity" values=".3;.7;.3" dur="1s" begin=".7s" repeatCount="indefinite" />
+            </path>
+          </g>
+        )}
+
+        {player.ornament === "glacial" && (
+          <g>
+            <g><animate attributeName="opacity" values=".3;.7;.3" dur="3s" repeatCount="indefinite" /><polygon points="50,6 47,0 50,-6 53,0" fill="#67e8f9" opacity=".5" /></g>
+            <g><animate attributeName="opacity" values=".3;.7;.3" dur="3s" begin=".5s" repeatCount="indefinite" /><polygon points="88,28 94,26 96,32 90,30" fill="#67e8f9" opacity=".4" /></g>
+            <g><animate attributeName="opacity" values=".3;.7;.3" dur="3s" begin="1s" repeatCount="indefinite" /><polygon points="88,72 94,74 96,68 90,70" fill="#a5f3fc" opacity=".4" /></g>
+            <g><animate attributeName="opacity" values=".3;.7;.3" dur="3s" begin="1.5s" repeatCount="indefinite" /><polygon points="50,94 47,100 50,106 53,100" fill="#67e8f9" opacity=".5" /></g>
+            <g><animate attributeName="opacity" values=".3;.7;.3" dur="3s" begin="2s" repeatCount="indefinite" /><polygon points="12,72 6,74 4,68 10,70" fill="#a5f3fc" opacity=".4" /></g>
+            <g><animate attributeName="opacity" values=".3;.7;.3" dur="3s" begin="2.5s" repeatCount="indefinite" /><polygon points="12,28 6,26 4,32 10,30" fill="#67e8f9" opacity=".4" /></g>
+          </g>
+        )}
+
+        {player.ornament === "abyssal" && (
+          <g>
+            <g><animate attributeName="opacity" values=".3;.6;.3" dur="3s" repeatCount="indefinite" /><path d="M50,8Q44,0 48,-6Q52,-2 50,8" fill="none" stroke="#6366f1" strokeWidth="1.8" strokeLinecap="round" opacity=".5" /></g>
+            <g><animate attributeName="opacity" values=".3;.6;.3" dur="3s" begin=".5s" repeatCount="indefinite" /><path d="M88,30Q94,24 96,30Q92,34 88,30" fill="none" stroke="#818cf8" strokeWidth="1.5" strokeLinecap="round" opacity=".4" /></g>
+            <g><animate attributeName="opacity" values=".3;.6;.3" dur="3s" begin="1s" repeatCount="indefinite" /><path d="M88,70Q94,76 96,70Q92,66 88,70" fill="none" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round" opacity=".4" /></g>
+            <g><animate attributeName="opacity" values=".3;.6;.3" dur="3s" begin="1.5s" repeatCount="indefinite" /><path d="M50,92Q44,100 48,106Q52,102 50,92" fill="none" stroke="#818cf8" strokeWidth="1.8" strokeLinecap="round" opacity=".5" /></g>
+            <g><animate attributeName="opacity" values=".3;.6;.3" dur="3s" begin="2s" repeatCount="indefinite" /><path d="M12,70Q6,76 4,70Q8,66 12,70" fill="none" stroke="#6366f1" strokeWidth="1.5" strokeLinecap="round" opacity=".4" /></g>
+            <g><animate attributeName="opacity" values=".3;.6;.3" dur="3s" begin="2.5s" repeatCount="indefinite" /><path d="M12,30Q6,24 4,30Q8,34 12,30" fill="none" stroke="#818cf8" strokeWidth="1.5" strokeLinecap="round" opacity=".4" /></g>
+          </g>
+        )}
+
+        {player.ornament === "infernal" && (
+          <g>
+            <g><animate attributeName="opacity" values=".5;1;.5" dur="1.2s" repeatCount="indefinite" /><path d="M50,8Q46,-6 50,-14Q54,-6 50,8" fill="#dc2626" opacity=".7" /><path d="M48,8Q48,-2 50,-8Q52,-2 52,8" fill="#ef4444" opacity=".5" /></g>
+            <g><animate attributeName="opacity" values=".4;.9;.4" dur="1.2s" begin=".2s" repeatCount="indefinite" /><path d="M87,29Q94,20 96,28Q90,32 87,29" fill="#dc2626" opacity=".6" /></g>
+            <g><animate attributeName="opacity" values=".4;.9;.4" dur="1.2s" begin=".4s" repeatCount="indefinite" /><path d="M87,71Q94,80 96,72Q90,68 87,71" fill="#ef4444" opacity=".5" /></g>
+            <g><animate attributeName="opacity" values=".5;1;.5" dur="1.2s" begin=".6s" repeatCount="indefinite" /><path d="M50,92Q46,106 50,114Q54,106 50,92" fill="#dc2626" opacity=".7" /><path d="M48,92Q48,102 50,108Q52,102 52,92" fill="#ef4444" opacity=".5" /></g>
+            <g><animate attributeName="opacity" values=".4;.9;.4" dur="1.2s" begin=".8s" repeatCount="indefinite" /><path d="M13,71Q6,80 4,72Q10,68 13,71" fill="#dc2626" opacity=".6" /></g>
+            <g><animate attributeName="opacity" values=".4;.9;.4" dur="1.2s" begin="1s" repeatCount="indefinite" /><path d="M13,29Q6,20 4,28Q10,32 13,29" fill="#ef4444" opacity=".5" /></g>
+          </g>
+        )}
+
+        {/* SVG exclusive avatars */}
+        {player.emoji === "svg_dragon" && (
+          <g transform="translate(50,50)">
+            <path d="M-8,-12L-12,-20L-6,-16" fill="none" stroke="#a855f7" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M8,-12L12,-20L6,-16" fill="none" stroke="#a855f7" strokeWidth="1.8" strokeLinecap="round" />
+            <path d="M-10,-4Q-14,-12 -8,-16Q-4,-10 0,-12Q4,-10 8,-16Q14,-12 10,-4Q8,4 6,10Q4,16 0,18Q-4,16 -6,10Q-8,4 -10,-4Z" fill="#a855f7" opacity=".15" stroke="#a855f7" strokeWidth="1.5" />
+            <circle cx="-5" cy="-4" r="3" fill="#c084fc" opacity=".8" />
+            <circle cx="5" cy="-4" r="3" fill="#c084fc" opacity=".8" />
+            <circle cx="-5" cy="-4" r="1.5" fill={S1} />
+            <circle cx="5" cy="-4" r="1.5" fill={S1} />
+            <path d="M-3,6Q0,10 3,6" fill="none" stroke="#a855f7" strokeWidth="1.5" strokeLinecap="round" />
+          </g>
+        )}
+        {player.emoji === "svg_swords" && (
+          <g transform="translate(50,50)">
+            <line x1="-12" y1="14" x2="12" y2="-14" stroke="#f43f5e" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M10,-16L16,-12L12,-14L14,-18Z" fill="#f43f5e" />
+            <line x1="12" y1="14" x2="-12" y2="-14" stroke="#fb7185" strokeWidth="2.5" strokeLinecap="round" />
+            <path d="M-10,-16L-16,-12L-12,-14L-14,-18Z" fill="#fb7185" />
+            <circle cx="0" cy="0" r="2" fill="#fb7185" />
+          </g>
+        )}
+        {player.emoji === "svg_crown" && (
+          <g transform="translate(50,50)">
+            <path d="M-14,6L-18,-6L-8,-8L0,-16L8,-8L18,-6L14,6Z" fill="#ffd700" opacity=".2" stroke="#ffd700" strokeWidth="1.5" strokeLinejoin="round" />
+            <circle cx="-18" cy="-6" r="3" fill="#ffd700" opacity=".7" />
+            <circle cx="0" cy="-16" r="3" fill="#fbbf24" opacity=".8" />
+            <circle cx="18" cy="-6" r="3" fill="#ffd700" opacity=".7" />
+            <rect x="-14" y="6" width="28" height="5" rx="2" fill="#ffd700" opacity=".5" />
+          </g>
+        )}
+        {player.emoji === "svg_eye" && (
+          <g transform="translate(50,50)">
+            <path d="M-20,0Q-10,-16 0,-16Q10,-16 20,0Q10,16 0,16Q-10,16 -20,0Z" fill="#00f0ff" opacity=".1" stroke="#00f0ff" strokeWidth="1.5" />
+            <circle cx="0" cy="0" r="8" fill="#00f0ff" opacity=".15" stroke="#00f0ff" strokeWidth="1" />
+            <circle cx="0" cy="0" r="5" fill="#00f0ff" opacity=".3" />
+            <circle cx="0" cy="0" r="2.5" fill={S1} />
+            <circle cx="1" cy="-1" r="1" fill="#22d3ee" />
+          </g>
+        )}
+        {player.emoji === "svg_mask" && (
+          <g transform="translate(50,50)">
+            <path d="M-14,-8Q-16,-16 -8,-18Q0,-20 8,-18Q16,-16 14,-8L12,6Q8,14 0,16Q-8,14 -12,6Z" fill="#f97316" opacity=".15" stroke="#f97316" strokeWidth="1.5" />
+            <path d="M-8,-8L-4,-12L-2,-6Z" fill="#f97316" opacity=".5" />
+            <path d="M2,-6Q6,-14 10,-8Q8,-4 2,-6Z" fill="#f97316" opacity=".5" />
+            <path d="M-6,4Q0,10 6,4" fill="none" stroke="#f97316" strokeWidth="1.5" strokeLinecap="round" />
+            <circle cx="-10" cy="-18" r="2.5" fill="#fbbf24" opacity=".5" />
+            <circle cx="10" cy="-18" r="2.5" fill="#fbbf24" opacity=".5" />
+          </g>
+        )}
+        {player.emoji === "svg_shield" && (
+          <g transform="translate(50,50)">
+            <path d="M0,-16L14,-8L14,6Q14,16 0,20Q-14,16 -14,6L-14,-8Z" fill="#3b82f6" opacity=".15" stroke="#3b82f6" strokeWidth="1.8" />
+            <line x1="0" y1="-4" x2="0" y2="8" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" />
+            <line x1="-5" y1="2" x2="5" y2="2" stroke="#3b82f6" strokeWidth="2" strokeLinecap="round" />
+          </g>
+        )}
+        {player.emoji === "svg_potion" && (
+          <g transform="translate(50,50)">
+            <rect x="-3" y="-16" width="6" height="6" rx="1" fill="none" stroke="#10b981" strokeWidth="1.5" />
+            <path d="M-3,-10L-10,4Q-12,10 -10,14Q-6,18 0,20Q6,18 10,14Q12,10 10,4L3,-10Z" fill="#10b981" opacity=".15" stroke="#10b981" strokeWidth="1.5" />
+            <path d="M-8,6Q-4,2 0,4Q4,2 8,6Q10,12 8,14Q4,18 0,20Q-4,18 -8,14Q-10,12 -8,6Z" fill="#10b981" opacity=".2" />
+            <circle cx="-3" cy="10" r="2" fill="#34d399" opacity=".5">
+              <animate attributeName="cy" values="10;6;10" dur="2s" repeatCount="indefinite" />
+            </circle>
+          </g>
+        )}
+        {player.emoji === "svg_stars" && (
+          <g transform="translate(50,50)">
+            <circle cx="0" cy="-12" r="2.5" fill="#fbbf24" opacity=".8" />
+            <circle cx="12" cy="-2" r="2" fill="#fbbf24" opacity=".7" />
+            <circle cx="8" cy="10" r="2" fill="#fbbf24" opacity=".6" />
+            <circle cx="-6" cy="12" r="2.5" fill="#fbbf24" opacity=".7" />
+            <circle cx="-12" cy="0" r="2" fill="#fbbf24" opacity=".6" />
+            <line x1="0" y1="-12" x2="12" y2="-2" stroke="#fbbf24" strokeWidth="0.8" opacity=".4" />
+            <line x1="12" y1="-2" x2="8" y2="10" stroke="#fbbf24" strokeWidth="0.8" opacity=".4" />
+            <line x1="8" y1="10" x2="-6" y2="12" stroke="#fbbf24" strokeWidth="0.8" opacity=".4" />
+            <line x1="-6" y1="12" x2="-12" y2="0" stroke="#fbbf24" strokeWidth="0.8" opacity=".4" />
+            <line x1="-12" y1="0" x2="0" y2="-12" stroke="#fbbf24" strokeWidth="0.8" opacity=".4" />
+            <circle cx="0" cy="0" r="1.5" fill="#fbbf24" opacity=".5" />
+          </g>
+        )}
+        {player.emoji === "svg_serpent" && (
+          <g transform="translate(50,50)">
+            <path d="M-4,-14Q-14,-10 -16,0Q-14,10 -4,14Q6,16 12,10Q18,2 14,-6Q10,-12 2,-14" fill="none" stroke="#7c3aed" strokeWidth="2.5" strokeLinecap="round" opacity=".6" />
+            <circle cx="-4" cy="-14" r="4" fill="#7c3aed" opacity=".3" />
+            <circle cx="-6" cy="-16" r="1.2" fill="#c084fc" />
+            <circle cx="-2" cy="-16" r="1.2" fill="#c084fc" />
+          </g>
+        )}
+        {player.emoji === "svg_phoenix" && (
+          <g transform="translate(50,50)">
+            <path d="M0,-4Q-8,-14 -18,-12Q-22,-6 -18,2Q-12,6 -6,4" fill="none" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" opacity=".7" />
+            <path d="M0,-4Q8,-14 18,-12Q22,-6 18,2Q12,6 6,4" fill="none" stroke="#f59e0b" strokeWidth="1.8" strokeLinecap="round" opacity=".7" />
+            <ellipse cx="0" cy="2" rx="6" ry="10" fill="#f59e0b" opacity=".12" stroke="#f59e0b" strokeWidth="1.5" />
+            <circle cx="0" cy="-6" r="3.5" fill="#f59e0b" opacity=".2" />
+            <circle cx="-1.5" cy="-7" r="1" fill="#fbbf24" />
+            <circle cx="1.5" cy="-7" r="1" fill="#fbbf24" />
+            <path d="M0,12Q-3,18 -1,22" fill="none" stroke="#f59e0b" strokeWidth="1" strokeLinecap="round" opacity=".4" />
+            <path d="M0,12Q3,18 1,22" fill="none" stroke="#f59e0b" strokeWidth="1" strokeLinecap="round" opacity=".4" />
+          </g>
+        )}
+        {/* Default emoji for non-SVG avatars */}
+        {player.emoji.indexOf("svg_") !== 0 && (
+          <text x="50" y="52" textAnchor="middle" dominantBaseline="central" fontSize={sz > 40 ? "32" : sz > 28 ? "20" : "14"} fill={TP}>
+            {player.emoji}
+          </text>
+        )}
+      </svg>
     </div>
   );
 }
@@ -655,7 +992,7 @@ function Dashboard(props) {
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <NeonCard glow={me ? me.color : N1}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          {me && <PlayerAvatar player={me} size={52} />}
+          {me && <PlayerAvatar player={me} size={52} rankInfo={me.ri} />}
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               {me ? <PlayerName player={me} size={16} /> : <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 16, color: TP }}>{user}</span>}
@@ -712,7 +1049,7 @@ function Dashboard(props) {
             return (
               <div key={s.name} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: i < stats.length - 1 ? "1px solid " + BD : "none" }}>
                 <span style={{ fontFamily: FD, fontWeight: 800, fontSize: 14, width: 20, textAlign: "center", color: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : TD }}>{i + 1}</span>
-                <PlayerAvatar player={s} size={32} />
+                <PlayerAvatar player={s} size={32} rankInfo={s.ri} />
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
                     <PlayerName player={s} size={12} />
@@ -851,7 +1188,7 @@ function ProfilePage(props) {
   var locked = ACHS.filter(function(a) { return ulIds.indexOf(a.id) === -1 && !a.hidden; });
   var hiddenN = ACHS.filter(function(a) { return ulIds.indexOf(a.id) === -1 && a.hidden; }).length;
   var availT = getAvailTitles(s);
-  var availAv = getAvailAvatars(allIds);
+  var availAv = getAvailAvatars(allIds, me.previewMode);
   var availOrn = getAvailOrnaments(allIds);
   var availCS = getAvailCStyles(allIds);
   var sec = useState("succes"); var activeSec = sec[0]; var setSec = sec[1];
@@ -866,7 +1203,7 @@ function ProfilePage(props) {
       <NeonCard glow={me.color}>
         <div style={{ textAlign: "center" }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
-            <PlayerAvatar player={me} size={80} />
+            <PlayerAvatar player={me} size={80} rankInfo={r} />
           </div>
           <PlayerName player={me} size={22} />
           {me.title && <TitleTag titleId={me.title} />}
@@ -957,20 +1294,44 @@ function ProfilePage(props) {
       {activeSec === "custom" && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <NeonCard glow={N2}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: N2, letterSpacing: 2, marginBottom: 10 }}>AVATAR</div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-              {availAv.map(function(em) {
-                var isEx = AVATARS.indexOf(em) === -1;
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: N2, letterSpacing: 2 }}>AVATAR</div>
+            </div>
+            {/* Avatar preview */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+              <PlayerAvatar player={me} size={60} rankInfo={r} />
+            </div>
+            <div style={{ fontSize: 9, color: TD, marginBottom: 6 }}>EMOJIS</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 12 }}>
+              {AVATARS.map(function(em) {
                 return (
                   <button key={em} onClick={function() { onUp(pi, Object.assign({}, me, { emoji: em })); }}
-                    style={{ width: 36, height: 36, borderRadius: 8, border: me.emoji === em ? "2px solid " + N1 : isEx ? "1px solid " + N2 + "60" : "1px solid " + BD, background: me.emoji === em ? N1 + "15" : isEx ? N2 + "10" : S2, fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    style={{ width: 36, height: 36, borderRadius: 8, border: me.emoji === em ? "2px solid " + N1 : "1px solid " + BD, background: me.emoji === em ? N1 + "15" : S2, fontSize: 17, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
                     {em}
                   </button>
                 );
               })}
             </div>
-            {EX_AVATARS.length > availAv.length - AVATARS.length && (
-              <div style={{ fontSize: 9, color: TD, marginTop: 8, fontStyle: "italic" }}>🔒 {EX_AVATARS.length - (availAv.length - AVATARS.length)} avatars exclusifs a debloquer</div>
+            <div style={{ fontSize: 9, color: N2, marginBottom: 6, fontWeight: 600 }}>EXCLUSIFS SVG</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {EX_AVATARS.map(function(ea) {
+                var isAvail = allIds.indexOf(ea.req) !== -1 || me.previewMode;
+                var isActive = me.emoji === ea.id;
+                var isPrev = me.previewMode && allIds.indexOf(ea.req) === -1;
+                return (
+                  <button key={ea.id} disabled={!isAvail}
+                    onClick={function() { if (isAvail) onUp(pi, Object.assign({}, me, { emoji: ea.id })); }}
+                    style={{ width: 50, padding: "4px 2px", borderRadius: 8, border: isActive ? "2px solid " + ea.color : isPrev ? "1px dashed " + ea.color + "60" : isAvail ? "1px solid " + ea.color + "40" : "1px solid " + BD, background: isActive ? ea.color + "15" : isPrev ? ea.color + "06" : isAvail ? S2 : S2, cursor: isAvail ? "pointer" : "not-allowed", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, opacity: isAvail ? 1 : 0.35 }}>
+                    <div style={{ width: 30, height: 30 }}>
+                      <PlayerAvatar player={Object.assign({}, me, { emoji: ea.id, ornament: "none" })} size={30} rankInfo={null} />
+                    </div>
+                    <span style={{ fontSize: 7, fontWeight: 600, color: ea.color, fontFamily: FD }}>{ea.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {!me.previewMode && EX_AVATARS.filter(function(ea) { return allIds.indexOf(ea.req) === -1; }).length > 0 && (
+              <div style={{ fontSize: 9, color: TD, marginTop: 8, fontStyle: "italic" }}>🔒 {EX_AVATARS.filter(function(ea) { return allIds.indexOf(ea.req) === -1; }).length} avatars exclusifs a debloquer</div>
             )}
           </NeonCard>
 
@@ -1002,20 +1363,37 @@ function ProfilePage(props) {
           </NeonCard>
 
           <NeonCard glow={"#cd7f32"}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#cd7f32", letterSpacing: 2, marginBottom: 10 }}>ORNEMENT (CADRE AVATAR)</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "#cd7f32", letterSpacing: 2 }}>ORNEMENT (CADRE AVATAR)</div>
+              <button onClick={function() { onUp(pi, Object.assign({}, me, { previewMode: !me.previewMode })); }}
+                style={{ padding: "3px 8px", borderRadius: 6, border: "1px solid " + (me.previewMode ? N2 : BD), background: me.previewMode ? N2 + "20" : S2, fontSize: 9, fontWeight: 600, color: me.previewMode ? N2 : TD, cursor: "pointer", fontFamily: FD }}>
+                {me.previewMode ? "Mode normal" : "Preview tout"}
+              </button>
+            </div>
+            {/* Avatar preview */}
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
+              <PlayerAvatar player={me} size={70} rankInfo={r} />
+            </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {ORNAMENTS.map(function(o) {
                 var avail = availOrn.indexOf(o) !== -1;
+                var canUse = avail || me.previewMode;
                 var active = me.ornament === o.id;
+                var isPreview = !avail && me.previewMode;
                 return (
-                  <button key={o.id} disabled={!avail}
-                    onClick={function() { if (avail) onUp(pi, Object.assign({}, me, { ornament: o.id })); }}
-                    style={{ padding: "8px 12px", borderRadius: 8, border: active ? "2px solid " + (o.color || N1) : "1px solid " + BD, background: active ? (o.color || N1) + "10" : S2, cursor: avail ? "pointer" : "not-allowed", textAlign: "left", display: "flex", alignItems: "center", gap: 10, opacity: avail ? 1 : 0.4 }}>
-                    {o.color && <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid " + o.color, background: o.color + "15", boxShadow: o.style === "glow" ? "0 0 8px " + o.color + "50" : "none" }} />}
+                  <button key={o.id} disabled={!canUse}
+                    onClick={function() { if (canUse) onUp(pi, Object.assign({}, me, { ornament: o.id })); }}
+                    style={{ padding: "8px 12px", borderRadius: 8, border: active ? "2px solid " + (o.color || N1) : isPreview ? "1px dashed " + (o.color || BD) : "1px solid " + BD, background: active ? (o.color || N1) + "10" : isPreview ? (o.color || N1) + "06" : S2, cursor: canUse ? "pointer" : "not-allowed", textAlign: "left", display: "flex", alignItems: "center", gap: 10, opacity: canUse ? 1 : 0.4 }}>
+                    {o.color && <div style={{ width: 22, height: 22, borderRadius: o.style === "special" ? 4 : "50%", border: "2px solid " + o.color, background: o.color + "15", boxShadow: (o.style === "glow" || o.style === "special") ? "0 0 8px " + o.color + "50" : "none" }} />}
                     {!o.color && <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid " + BD, background: S2 }} />}
-                    <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 11, color: active ? (o.color || N1) : TP }}>{o.name}</span>
-                    {!avail && <span style={{ marginLeft: "auto", fontSize: 9, color: TD }}>🔒</span>}
-                    {active && <span style={{ marginLeft: "auto", fontSize: 9, color: o.color || N1 }}>actif</span>}
+                    <div style={{ flex: 1 }}>
+                      <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 11, color: active ? (o.color || N1) : TP }}>{o.name}</span>
+                      {o.style === "special" && <span style={{ fontSize: 8, color: o.color, marginLeft: 6, fontWeight: 700 }}>SPECIAL</span>}
+                    </div>
+                    {!avail && !me.previewMode && <span style={{ fontSize: 9, color: TD }}>🔒</span>}
+                    {isPreview && <span style={{ fontSize: 8, color: N2, fontStyle: "italic" }}>preview</span>}
+                    {active && avail && <span style={{ fontSize: 9, color: o.color || N1 }}>actif</span>}
+                    {active && isPreview && <span style={{ fontSize: 8, color: N2, fontStyle: "italic" }}>preview</span>}
                   </button>
                 );
               })}
