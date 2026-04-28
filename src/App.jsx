@@ -1320,7 +1320,7 @@ function StatsPage(props) {
 
 /* ═══ PROFILE PAGE ═══ */
 function ProfilePage(props) {
-  var matches = props.matches; var players = props.players; var user = props.currentUser; var onUp = props.onUpdatePlayer;
+  var matches = props.matches; var players = props.players; var user = props.currentUser; var onUp = props.onUpdatePlayer; var onToggle = props.onTogglePreview;
   var me = players.find(function(p) { return p.name === user; });
   var pi = players.findIndex(function(p) { return p.name === user; });
   if (!me) return null;
@@ -1509,7 +1509,7 @@ function ProfilePage(props) {
           <NeonCard glow={"#cd7f32"}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#cd7f32", letterSpacing: 2 }}>ORNEMENT (CADRE AVATAR)</div>
-              <button onClick={function() { onUp(pi, Object.assign({}, me, { previewMode: !me.previewMode })); }}
+              <button onClick={function() { onToggle(pi); }}
                 style={{ padding: "3px 8px", borderRadius: 6, border: "1px solid " + (me.previewMode ? N2 : BD), background: me.previewMode ? N2 + "20" : S2, fontSize: 9, fontWeight: 600, color: me.previewMode ? N2 : TD, cursor: "pointer", fontFamily: FD }}>
                 {me.previewMode ? "Mode normal" : "Preview tout"}
               </button>
@@ -1670,13 +1670,22 @@ export default function App() {
   }
 
   function handleUpdatePlayer(i, p) {
-    /* Save to Supabase */
+    /* Save to Supabase (only persisted fields) */
     supabase.from("players").update({
       color: p.color, emoji: p.emoji, title: p.title,
       ornament: p.ornament, cstyle: p.cstyle,
     }).eq("name", p.name).then(function() {});
     /* Optimistic local update */
     setPlayers(function(prev) { var n = prev.slice(); n[i] = p; return n; });
+  }
+
+  function handleTogglePreview(i) {
+    /* Pure local toggle - no Supabase save needed */
+    setPlayers(function(prev) {
+      var n = prev.slice();
+      n[i] = Object.assign({}, n[i], { previewMode: !n[i].previewMode });
+      return n;
+    });
   }
 
   if (loading) {
@@ -1734,7 +1743,7 @@ export default function App() {
         {tab === "home" && <Dashboard matches={matches} players={players} currentUser={currentUser} onNav={setTab} spoil={spoil} />}
         {tab === "matches" && <MatchesPage matches={matches} players={players} onUpdate={handleUpdate} currentUser={currentUser} isAdmin={isAdmin} spoil={spoil} />}
         {tab === "stats" && <StatsPage matches={matches} players={players} spoil={spoil} />}
-        {tab === "profile" && <ProfilePage matches={matches} players={players} currentUser={currentUser} onUpdatePlayer={handleUpdatePlayer} />}
+        {tab === "profile" && <ProfilePage matches={matches} players={players} currentUser={currentUser} onUpdatePlayer={handleUpdatePlayer} onTogglePreview={handleTogglePreview} />}
       </div>
     </div>
   );
