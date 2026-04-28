@@ -1320,7 +1320,7 @@ function StatsPage(props) {
 
 /* ═══ PROFILE PAGE ═══ */
 function ProfilePage(props) {
-  var matches = props.matches; var players = props.players; var user = props.currentUser; var onUp = props.onUpdatePlayer; var onToggle = props.onTogglePreview;
+  var matches = props.matches; var players = props.players; var user = props.currentUser; var onUp = props.onUpdatePlayer; var onToggle = props.onTogglePreview; var previewOn = props.previewMode;
   var me = players.find(function(p) { return p.name === user; });
   var pi = players.findIndex(function(p) { return p.name === user; });
   if (!me) return null;
@@ -1332,7 +1332,7 @@ function ProfilePage(props) {
   var locked = ACHS.filter(function(a) { return ulIds.indexOf(a.id) === -1 && !a.hidden; });
   var hiddenN = ACHS.filter(function(a) { return ulIds.indexOf(a.id) === -1 && a.hidden; }).length;
   var availT = getAvailTitles(s);
-  var availAv = getAvailAvatars(allIds, me.previewMode);
+  var availAv = getAvailAvatars(allIds, previewOn);
   var availOrn = getAvailOrnaments(allIds);
   var availCS = getAvailCStyles(allIds);
   var sec = useState("succes"); var activeSec = sec[0]; var setSec = sec[1];
@@ -1459,9 +1459,9 @@ function ProfilePage(props) {
             <div style={{ fontSize: 9, color: N2, marginBottom: 6, fontWeight: 600 }}>EXCLUSIFS SVG</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {EX_AVATARS.map(function(ea) {
-                var isAvail = allIds.indexOf(ea.req) !== -1 || me.previewMode;
+                var isAvail = allIds.indexOf(ea.req) !== -1 || previewOn;
                 var isActive = me.emoji === ea.id;
-                var isPrev = me.previewMode && allIds.indexOf(ea.req) === -1;
+                var isPrev = previewOn && allIds.indexOf(ea.req) === -1;
                 return (
                   <button key={ea.id} disabled={!isAvail}
                     onClick={function() { if (isAvail) onUp(pi, Object.assign({}, me, { emoji: ea.id })); }}
@@ -1474,7 +1474,7 @@ function ProfilePage(props) {
                 );
               })}
             </div>
-            {!me.previewMode && EX_AVATARS.filter(function(ea) { return allIds.indexOf(ea.req) === -1; }).length > 0 && (
+            {!previewOn && EX_AVATARS.filter(function(ea) { return allIds.indexOf(ea.req) === -1; }).length > 0 && (
               <div style={{ fontSize: 9, color: TD, marginTop: 8, fontStyle: "italic" }}>🔒 {EX_AVATARS.filter(function(ea) { return allIds.indexOf(ea.req) === -1; }).length} avatars exclusifs a debloquer</div>
             )}
           </NeonCard>
@@ -1509,9 +1509,9 @@ function ProfilePage(props) {
           <NeonCard glow={"#cd7f32"}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: "#cd7f32", letterSpacing: 2 }}>ORNEMENT (CADRE AVATAR)</div>
-              <button onClick={function() { onToggle(pi); }}
-                style={{ padding: "3px 8px", borderRadius: 6, border: "1px solid " + (me.previewMode ? N2 : BD), background: me.previewMode ? N2 + "20" : S2, fontSize: 9, fontWeight: 600, color: me.previewMode ? N2 : TD, cursor: "pointer", fontFamily: FD }}>
-                {me.previewMode ? "Mode normal" : "Preview tout"}
+              <button onClick={function() { onToggle(); }}
+                style={{ padding: "3px 8px", borderRadius: 6, border: "1px solid " + (previewOn ? N2 : BD), background: previewOn ? N2 + "20" : S2, fontSize: 9, fontWeight: 600, color: previewOn ? N2 : TD, cursor: "pointer", fontFamily: FD }}>
+                {previewOn ? "Mode normal" : "Preview tout"}
               </button>
             </div>
             {/* Avatar preview */}
@@ -1521,9 +1521,9 @@ function ProfilePage(props) {
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {ORNAMENTS.map(function(o) {
                 var avail = availOrn.indexOf(o) !== -1;
-                var canUse = avail || me.previewMode;
+                var canUse = avail || previewOn;
                 var active = me.ornament === o.id;
-                var isPreview = !avail && me.previewMode;
+                var isPreview = !avail && previewOn;
                 return (
                   <button key={o.id} disabled={!canUse}
                     onClick={function() { if (canUse) onUp(pi, Object.assign({}, me, { ornament: o.id })); }}
@@ -1534,7 +1534,7 @@ function ProfilePage(props) {
                       <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 11, color: active ? (o.color || N1) : TP }}>{o.name}</span>
                       {o.style === "special" && <span style={{ fontSize: 8, color: o.color, marginLeft: 6, fontWeight: 700 }}>SPECIAL</span>}
                     </div>
-                    {!avail && !me.previewMode && <span style={{ fontSize: 9, color: TD }}>🔒</span>}
+                    {!avail && !previewOn && <span style={{ fontSize: 9, color: TD }}>🔒</span>}
                     {isPreview && <span style={{ fontSize: 8, color: N2, fontStyle: "italic" }}>preview</span>}
                     {active && avail && <span style={{ fontSize: 9, color: o.color || N1 }}>actif</span>}
                     {active && isPreview && <span style={{ fontSize: 8, color: N2, fontStyle: "italic" }}>preview</span>}
@@ -1576,6 +1576,7 @@ export default function App() {
   var tb = useState("home"); var tab = tb[0]; var setTab = tb[1];
   var sp = useState(false); var spoil = sp[0]; var setSpoil = sp[1];
   var ld = useState(true); var loading = ld[0]; var setLoading = ld[1];
+  var pv = useState(false); var previewMode = pv[0]; var setPreviewMode = pv[1];
   var isAdmin = loggedIn === "__admin";
   var currentUser = isAdmin ? "Ulysse" : loggedIn;
 
@@ -1601,20 +1602,16 @@ export default function App() {
       var mData = results[1].data || [];
       var prData = results[2].data || [];
 
-      /* Build players array - preserve local-only state like previewMode */
-      setPlayers(function(prev) {
-        var prevMap = {};
-        prev.forEach(function(p) { prevMap[p.name] = p; });
-        return pData.map(function(p) {
-          var old = prevMap[p.name];
-          return {
-            name: p.name, color: p.color || "#e8364f", emoji: p.emoji || "🦁",
-            pin: p.pin || "1111", title: p.title || null,
-            ornament: p.ornament || "none", cstyle: p.cstyle || "solid",
-            previewMode: old ? old.previewMode : false,
-          };
-        });
+      /* Build players array */
+      var builtPlayers = pData.map(function(p) {
+        return {
+          name: p.name, color: p.color || "#e8364f", emoji: p.emoji || "🦁",
+          pin: p.pin || "1111", title: p.title || null,
+          ornament: p.ornament || "none", cstyle: p.cstyle || "solid",
+        };
       });
+
+      setPlayers(builtPlayers);
 
       /* Build matches with preds nested */
       var builtMatches = mData.map(function(m) {
@@ -1679,13 +1676,8 @@ export default function App() {
     setPlayers(function(prev) { var n = prev.slice(); n[i] = p; return n; });
   }
 
-  function handleTogglePreview(i) {
-    /* Pure local toggle - no Supabase save needed */
-    setPlayers(function(prev) {
-      var n = prev.slice();
-      n[i] = Object.assign({}, n[i], { previewMode: !n[i].previewMode });
-      return n;
-    });
+  function handleTogglePreview() {
+    setPreviewMode(function(v) { return !v; });
   }
 
   if (loading) {
@@ -1743,7 +1735,7 @@ export default function App() {
         {tab === "home" && <Dashboard matches={matches} players={players} currentUser={currentUser} onNav={setTab} spoil={spoil} />}
         {tab === "matches" && <MatchesPage matches={matches} players={players} onUpdate={handleUpdate} currentUser={currentUser} isAdmin={isAdmin} spoil={spoil} />}
         {tab === "stats" && <StatsPage matches={matches} players={players} spoil={spoil} />}
-        {tab === "profile" && <ProfilePage matches={matches} players={players} currentUser={currentUser} onUpdatePlayer={handleUpdatePlayer} onTogglePreview={handleTogglePreview} />}
+        {tab === "profile" && <ProfilePage matches={matches} players={players} currentUser={currentUser} onUpdatePlayer={handleUpdatePlayer} onTogglePreview={handleTogglePreview} previewMode={previewMode} />}
       </div>
     </div>
   );
