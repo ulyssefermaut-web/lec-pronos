@@ -107,13 +107,40 @@ var INIT_M = [
   {id:12,week:2,day:"DIM 05/04",team1:"Fnatic",team2:"G2 Esports",bo:3,cote1:6.3,cote2:1.2,winner:"Fnatic",score:"2-1",preds:{Ulysse:{winner:"G2 Esports",score:"0-2"},"César":{winner:"G2 Esports",score:"0-2"},Emilien:{winner:"G2 Esports",score:"0-2"},Arthur:{winner:"G2 Esports",score:"0-2"}}},
   {id:13,week:2,day:"LUN 06/04",team1:"GIANTX",team2:"Heretics",bo:3,cote1:1.3,cote2:3.3,winner:"GIANTX",score:"2-1",preds:{Ulysse:{winner:"GIANTX",score:"2-1"},"César":{winner:"GIANTX",score:"2-1"},Emilien:{winner:"GIANTX",score:"2-1"},Arthur:{winner:"Heretics",score:"1-2"}}},
   {id:14,week:2,day:"LUN 06/04",team1:"Vitality",team2:"KOI",bo:3,cote1:2.7,cote2:1.4,winner:"Vitality",score:"2-1",preds:{Ulysse:{winner:"Vitality",score:"2-1"},"César":{winner:"Vitality",score:"2-1"},Emilien:{winner:"KOI",score:"1-2"},Arthur:{winner:"Vitality",score:"2-1"}}},
-  {id:15,week:3,day:"SAM 11/04",team1:"Heretics",team2:"NaVi",bo:3,cote1:2.8,cote2:1.4,winner:null,score:null,preds:{Ulysse:{winner:"NaVi",score:"1-2"},"César":{winner:null,score:null},Emilien:{winner:"NaVi",score:"0-2"},Arthur:{winner:null,score:null}}},
-  {id:16,week:3,day:"SAM 11/04",team1:"G2 Esports",team2:"Vitality",bo:3,cote1:1.3,cote2:3.5,winner:null,score:null,preds:{Ulysse:{winner:"G2 Esports",score:"2-1"},"César":{winner:null,score:null},Emilien:{winner:"G2 Esports",score:"2-1"},Arthur:{winner:null,score:null}}},
-  {id:17,week:3,day:"SAM 11/04",team1:"KOI",team2:"SK Gaming",bo:3,cote1:1.2,cote2:4.5,winner:null,score:null,preds:{Ulysse:{winner:"KOI",score:"2-0"},"César":{winner:null,score:null},Emilien:{winner:"KOI",score:"2-1"},Arthur:{winner:null,score:null}}},
-  {id:18,week:3,day:"DIM 12/04",team1:"Vitality",team2:"Shifters",bo:3,cote1:1.2,cote2:4.5,winner:null,score:null,preds:{Ulysse:{winner:"Vitality",score:"2-0"},"César":{winner:null,score:null},Emilien:{winner:"Vitality",score:"2-1"},Arthur:{winner:null,score:null}}},
-  {id:19,week:3,day:"DIM 12/04",team1:"Heretics",team2:"KCorp",bo:3,cote1:4.7,cote2:1.2,winner:null,score:null,preds:{Ulysse:{winner:"KCorp",score:"0-2"},"César":{winner:null,score:null},Emilien:{winner:"KCorp",score:"0-2"},Arthur:{winner:null,score:null}}},
-  {id:20,week:3,day:"LUN 13/04",team1:"Fnatic",team2:"SK Gaming",bo:3,cote1:1.3,cote2:3.4,winner:null,score:null,preds:{}},
-  {id:21,week:3,day:"LUN 13/04",team1:"GIANTX",team2:"Shifters",bo:3,cote1:1.1,cote2:6,winner:null,score:null,preds:{}},
+  {id:15,week:3,day:"SAM 11/04",team1:"Heretics",team2:"NaVi",bo:3,cote1:2.8,cote2:1.4,winner:"NaVi",score:"0-2",preds:{Ulysse:{winner:"NaVi",score:"1-2"},"César":{winner:"NaVi",score:"0-2"},Emilien:{winner:"NaVi",score:"0-2"},Arthur:{winner:"NaVi",score:"0-2"}}},
+  {id:16,week:3,day:"SAM 11/04",team1:"G2 Esports",team2:"Vitality",bo:3,cote1:1.3,cote2:3.5,winner:"Vitality",score:"1-2",preds:{Ulysse:{winner:"G2 Esports",score:"2-1"},"César":{winner:"G2 Esports",score:"2-1"},Emilien:{winner:"G2 Esports",score:"2-1"},Arthur:{winner:"G2 Esports",score:"2-1"}}},
+  {id:17,week:3,day:"SAM 11/04",team1:"KOI",team2:"SK Gaming",bo:3,cote1:1.2,cote2:4.5,winner:"KOI",score:"2-0",preds:{Ulysse:{winner:"KOI",score:"2-0"},"César":{winner:"KOI",score:"2-0"},Emilien:{winner:"KOI",score:"2-1"},Arthur:{winner:"SK Gaming",score:"1-2"}}},
+  {id:18,week:3,day:"DIM 12/04",team1:"Vitality",team2:"Shifters",bo:3,cote1:1.2,cote2:4.5,winner:"Vitality",score:"2-1",preds:{Ulysse:{winner:"Vitality",score:"2-0"},"César":{winner:"Vitality",score:"2-0"},Emilien:{winner:"Vitality",score:"2-1"},Arthur:{winner:"Vitality",score:"2-1"}}},
+  {id:19,week:3,day:"DIM 12/04",team1:"Heretics",team2:"KCorp",bo:3,cote1:4.7,cote2:1.2,winner:"KCorp",score:"0-2",preds:{Ulysse:{winner:"KCorp",score:"0-2"},"César":{winner:"KCorp",score:"0-2"},Emilien:{winner:"KCorp",score:"0-2"},Arthur:{winner:"KCorp",score:"0-2"}}},
+  {id:20,week:3,day:"LUN 13/04",team1:"Fnatic",team2:"SK Gaming",bo:3,cote1:1.3,cote2:3.4,winner:"SK Gaming",score:"0-2",preds:{Ulysse:{winner:"Fnatic",score:"2-0"},"César":{winner:"Fnatic",score:"2-0"},Emilien:{winner:"Fnatic",score:"2-1"},Arthur:{winner:"Fnatic",score:"2-1"}}},
+  {id:21,week:3,day:"LUN 13/04",team1:"GIANTX",team2:"Shifters",bo:3,cote1:1.1,cote2:6,winner:"GIANTX",score:"2-0",preds:{Ulysse:{winner:"GIANTX",score:"2-0"},"César":{winner:"GIANTX",score:"2-0"},Emilien:{winner:"Shifters",score:"1-2"},Arthur:{winner:"GIANTX",score:"2-0"}}},
+  /* ═══ WEEK 4 ═══ */
+  {id:22,week:4,day:"SAM 18/04",team1:"GIANTX",team2:"NaVi",bo:3,cote1:1.7,cote2:2,winner:"NaVi",score:"1-2",preds:{Ulysse:{winner:"GIANTX",score:"2-1"},"César":{winner:"NaVi",score:"1-2"},Emilien:{winner:"NaVi",score:"1-2"},Arthur:{winner:"NaVi",score:"0-2"}}},
+  {id:23,week:4,day:"SAM 18/04",team1:"G2 Esports",team2:"SK Gaming",bo:3,cote1:1.1,cote2:5.3,winner:"G2 Esports",score:"2-0",preds:{Ulysse:{winner:"G2 Esports",score:"2-0"},"César":{winner:"G2 Esports",score:"2-0"},Emilien:{winner:"G2 Esports",score:"2-1"},Arthur:{winner:"G2 Esports",score:"2-1"}}},
+  {id:24,week:4,day:"DIM 19/04",team1:"Vitality",team2:"GIANTX",bo:3,cote1:1.8,cote2:1.9,winner:"Vitality",score:"2-1",preds:{Ulysse:{winner:"Vitality",score:"2-1"},"César":{winner:"GIANTX",score:"2-1"},Emilien:{winner:"Vitality",score:"2-1"},Arthur:{winner:"Vitality",score:"0-2"}}},
+  {id:25,week:4,day:"DIM 19/04",team1:"Heretics",team2:"KOI",bo:3,cote1:5.3,cote2:1.1,winner:"KOI",score:"0-2",preds:{Ulysse:{winner:"KOI",score:"0-2"},"César":{winner:"KOI",score:"0-2"},Emilien:{winner:"KOI",score:"0-2"},Arthur:{winner:"KOI",score:"0-2"}}},
+  {id:26,week:4,day:"LUN 20/04",team1:"Shifters",team2:"G2 Esports",bo:3,cote1:5.8,cote2:1.1,winner:null,score:null,preds:{Ulysse:{winner:"G2 Esports",score:"0-2"},"César":{winner:"G2 Esports",score:"0-2"},Emilien:{winner:"G2 Esports",score:"0-2"},Arthur:{winner:"G2 Esports",score:"0-2"}}},
+  {id:27,week:4,day:"LUN 20/04",team1:"SK Gaming",team2:"KCorp",bo:3,cote1:5.8,cote2:1.1,winner:null,score:null,preds:{Ulysse:{winner:"KCorp",score:"0-2"},"César":{winner:"KCorp",score:"0-2"},Emilien:{winner:"KCorp",score:"0-2"},Arthur:{winner:"KCorp",score:"0-2"}}},
+  /* ═══ WEEK 5 (LEC Roadtrip KC) ═══ */
+  {id:28,week:5,day:"JEU 24/04",team1:"Shifters",team2:"Fnatic",bo:3,cote1:3.5,cote2:1.3,winner:null,score:null,preds:{}},
+  {id:29,week:5,day:"JEU 24/04",team1:"NaVi",team2:"KCorp",bo:3,cote1:1.8,cote2:1.9,winner:null,score:null,preds:{}},
+  {id:30,week:5,day:"VEN 25/04",team1:"Fnatic",team2:"NaVi",bo:3,cote1:3.5,cote2:1.3,winner:null,score:null,preds:{}},
+  {id:31,week:5,day:"VEN 25/04",team1:"KCorp",team2:"Shifters",bo:3,cote1:1.2,cote2:4,winner:null,score:null,preds:{}},
+  {id:32,week:5,day:"SAM 26/04",team1:"KCorp",team2:"Fnatic",bo:3,cote1:1.3,cote2:3.5,winner:null,score:null,preds:{}},
+  /* ═══ WEEK 6 ═══ */
+  {id:33,week:6,day:"SAM 02/05",team1:"Fnatic",team2:"Heretics",bo:3,cote1:1.5,cote2:2.5,winner:null,score:null,preds:{}},
+  {id:34,week:6,day:"SAM 02/05",team1:"Vitality",team2:"SK Gaming",bo:3,cote1:1.1,cote2:5.5,winner:null,score:null,preds:{}},
+  {id:35,week:6,day:"DIM 03/05",team1:"Heretics",team2:"Shifters",bo:3,cote1:1.8,cote2:1.9,winner:null,score:null,preds:{}},
+  {id:36,week:6,day:"DIM 03/05",team1:"G2 Esports",team2:"NaVi",bo:3,cote1:1.4,cote2:2.8,winner:null,score:null,preds:{}},
+  {id:37,week:6,day:"LUN 04/05",team1:"KOI",team2:"GIANTX",bo:3,cote1:1.5,cote2:2.3,winner:null,score:null,preds:{}},
+  {id:38,week:6,day:"LUN 04/05",team1:"SK Gaming",team2:"NaVi",bo:3,cote1:4,cote2:1.2,winner:null,score:null,preds:{}},
+  /* ═══ WEEK 7 ═══ */
+  {id:39,week:7,day:"SAM 09/05",team1:"KOI",team2:"Vitality",bo:3,cote1:2.5,cote2:1.5,winner:null,score:null,preds:{}},
+  {id:40,week:7,day:"SAM 09/05",team1:"Shifters",team2:"NaVi",bo:3,cote1:4,cote2:1.2,winner:null,score:null,preds:{}},
+  {id:41,week:7,day:"DIM 10/05",team1:"GIANTX",team2:"G2 Esports",bo:3,cote1:1.6,cote2:2.2,winner:null,score:null,preds:{}},
+  {id:42,week:7,day:"DIM 10/05",team1:"Fnatic",team2:"KOI",bo:3,cote1:3,cote2:1.4,winner:null,score:null,preds:{}},
+  {id:43,week:7,day:"LUN 11/05",team1:"SK Gaming",team2:"Heretics",bo:3,cote1:1.8,cote2:1.9,winner:null,score:null,preds:{}},
+  {id:44,week:7,day:"LUN 11/05",team1:"Vitality",team2:"Fnatic",bo:3,cote1:1.2,cote2:4,winner:null,score:null,preds:{}},
 ];
 
 /* ═══ 28 RANKS (7 tiers x 4 divisions) ═══ */
@@ -598,6 +625,117 @@ function PlayerAvatar(props) {
                 <animate attributeName="opacity" values=".5;1;.5" dur="1s" begin=".6s" repeatCount="indefinite" />
               </circle>
             </g>
+          </g>
+        )}
+
+        {/* Rank ornament overlays */}
+        {player.ornament === "bronze" && (
+          <g>
+            {[0,60,120,180,240,300].map(function(a,i) {
+              var rad = a * Math.PI / 180;
+              var cx = 50 + 46 * Math.sin(rad);
+              var cy = 50 - 46 * Math.cos(rad);
+              return <circle key={i} cx={cx} cy={cy} r="2.5" fill="#cd7f32" opacity=".5"><animate attributeName="opacity" values=".3;.7;.3" dur="2.5s" begin={i * 0.4 + "s"} repeatCount="indefinite" /></circle>;
+            })}
+          </g>
+        )}
+
+        {player.ornament === "silver" && (
+          <g>
+            <circle cx="50" cy="50" r="48" fill="none" stroke="#c0c0c0" strokeWidth="0.8" opacity=".25" strokeDasharray="3 6">
+              <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="30s" repeatCount="indefinite" />
+            </circle>
+            {[0,120,240].map(function(a,i) {
+              var rad = a * Math.PI / 180;
+              var cx = 50 + 48 * Math.sin(rad);
+              var cy = 50 - 48 * Math.cos(rad);
+              return <circle key={i} cx={cx} cy={cy} r="2" fill="#c0c0c0" opacity=".4"><animate attributeName="opacity" values=".2;.6;.2" dur="2s" begin={i * 0.6 + "s"} repeatCount="indefinite" /></circle>;
+            })}
+          </g>
+        )}
+
+        {player.ornament === "gold" && (
+          <g>
+            <circle cx="50" cy="50" r="50" fill="none" stroke="#ffd700" strokeWidth="0.8" opacity=".2" strokeDasharray="4 4">
+              <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="25s" repeatCount="indefinite" />
+            </circle>
+            {[0,72,144,216,288].map(function(a,i) {
+              var rad = a * Math.PI / 180;
+              var cx = 50 + 50 * Math.sin(rad);
+              var cy = 50 - 50 * Math.cos(rad);
+              return <polygon key={i} points={(cx-2)+","+cy+" "+cx+","+(cy-3)+" "+(cx+2)+","+cy+" "+cx+","+(cy+3)} fill="#ffd700" opacity=".5"><animate attributeName="opacity" values=".3;.7;.3" dur="2s" begin={i * 0.3 + "s"} repeatCount="indefinite" /></polygon>;
+            })}
+          </g>
+        )}
+
+        {player.ornament === "plat" && (
+          <g>
+            <circle cx="50" cy="50" r="50" fill="none" stroke="#00f0ff" strokeWidth="0.6" opacity=".2" strokeDasharray="2 5">
+              <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="18s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="50" cy="50" r="54" fill="none" stroke="#00f0ff" strokeWidth="0.4" opacity=".15" strokeDasharray="5 3">
+              <animateTransform attributeName="transform" type="rotate" values="360 50 50;0 50 50" dur="22s" repeatCount="indefinite" />
+            </circle>
+            {[0,90,180,270].map(function(a,i) {
+              var rad = a * Math.PI / 180;
+              var cx = 50 + 52 * Math.sin(rad);
+              var cy = 50 - 52 * Math.cos(rad);
+              return <circle key={i} cx={cx} cy={cy} r="1.8" fill="#00f0ff" opacity=".5"><animate attributeName="opacity" values=".2;.8;.2" dur="1.5s" begin={i * 0.35 + "s"} repeatCount="indefinite" /></circle>;
+            })}
+          </g>
+        )}
+
+        {player.ornament === "diamond" && (
+          <g>
+            <circle cx="50" cy="50" r="52" fill="none" stroke="#a855f7" strokeWidth="0.6" opacity=".2" strokeDasharray="3 4">
+              <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="15s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="50" cy="50" r="56" fill="none" stroke="#c084fc" strokeWidth="0.4" opacity=".12" strokeDasharray="6 2">
+              <animateTransform attributeName="transform" type="rotate" values="360 50 50;0 50 50" dur="20s" repeatCount="indefinite" />
+            </circle>
+            {[0,60,120,180,240,300].map(function(a,i) {
+              var rad = a * Math.PI / 180;
+              var cx = 50 + 54 * Math.sin(rad);
+              var cy = 50 - 54 * Math.cos(rad);
+              return <polygon key={i} points={(cx-2)+","+cy+" "+cx+","+(cy-3)+" "+(cx+2)+","+cy+" "+cx+","+(cy+3)} fill="#a855f7" opacity=".5"><animate attributeName="opacity" values=".2;.7;.2" dur="1.8s" begin={i * 0.25 + "s"} repeatCount="indefinite" /></polygon>;
+            })}
+          </g>
+        )}
+
+        {player.ornament === "master" && (
+          <g>
+            <circle cx="50" cy="50" r="54" fill="none" stroke="#f43f5e" strokeWidth="0.7" opacity=".2" strokeDasharray="4 3">
+              <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="12s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="50" cy="50" r="58" fill="none" stroke="#fb7185" strokeWidth="0.4" opacity=".1" strokeDasharray="2 6">
+              <animateTransform attributeName="transform" type="rotate" values="360 50 50;0 50 50" dur="16s" repeatCount="indefinite" />
+            </circle>
+            {[0,45,90,135,180,225,270,315].map(function(a,i) {
+              var rad = a * Math.PI / 180;
+              var cx = 50 + 56 * Math.sin(rad);
+              var cy = 50 - 56 * Math.cos(rad);
+              return <circle key={i} cx={cx} cy={cy} r={i % 2 === 0 ? "2" : "1.2"} fill="#f43f5e" opacity=".5"><animate attributeName="opacity" values=".2;.8;.2" dur="1.2s" begin={i * 0.15 + "s"} repeatCount="indefinite" /></circle>;
+            })}
+          </g>
+        )}
+
+        {player.ornament === "chall" && (
+          <g>
+            <circle cx="50" cy="50" r="54" fill="none" stroke="#ff6b35" strokeWidth="0.8" opacity=".25" strokeDasharray="3 3">
+              <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="10s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="50" cy="50" r="58" fill="none" stroke="#ff6b35" strokeWidth="0.5" opacity=".15" strokeDasharray="5 2">
+              <animateTransform attributeName="transform" type="rotate" values="360 50 50;0 50 50" dur="14s" repeatCount="indefinite" />
+            </circle>
+            <circle cx="50" cy="50" r="62" fill="none" stroke="#f97316" strokeWidth="0.3" opacity=".1" strokeDasharray="2 5">
+              <animateTransform attributeName="transform" type="rotate" values="0 50 50;360 50 50" dur="8s" repeatCount="indefinite" />
+            </circle>
+            {[0,36,72,108,144,180,216,252,288,324].map(function(a,i) {
+              var rad = a * Math.PI / 180;
+              var cx = 50 + 58 * Math.sin(rad);
+              var cy = 50 - 58 * Math.cos(rad);
+              return <circle key={i} cx={cx} cy={cy} r={i % 3 === 0 ? "2.5" : "1.5"} fill="#ff6b35"><animate attributeName="opacity" values=".3;1;.3" dur="1s" begin={i * 0.1 + "s"} repeatCount="indefinite" /></circle>;
+            })}
           </g>
         )}
 
@@ -1463,14 +1601,19 @@ export default function App() {
       var mData = results[1].data || [];
       var prData = results[2].data || [];
 
-      /* Build players array */
-      var builtPlayers = pData.map(function(p) {
-        return {
-          name: p.name, color: p.color || "#e8364f", emoji: p.emoji || "🦁",
-          pin: p.pin || "1111", title: p.title || null,
-          ornament: p.ornament || "none", cstyle: p.cstyle || "solid",
-          previewMode: false,
-        };
+      /* Build players array - preserve local-only state like previewMode */
+      setPlayers(function(prev) {
+        var prevMap = {};
+        prev.forEach(function(p) { prevMap[p.name] = p; });
+        return pData.map(function(p) {
+          var old = prevMap[p.name];
+          return {
+            name: p.name, color: p.color || "#e8364f", emoji: p.emoji || "🦁",
+            pin: p.pin || "1111", title: p.title || null,
+            ornament: p.ornament || "none", cstyle: p.cstyle || "solid",
+            previewMode: old ? old.previewMode : false,
+          };
+        });
       });
 
       /* Build matches with preds nested */
@@ -1488,7 +1631,6 @@ export default function App() {
         };
       });
 
-      setPlayers(builtPlayers);
       setMatches(builtMatches);
       setLoading(false);
     });
