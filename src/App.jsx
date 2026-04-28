@@ -984,7 +984,11 @@ function LoginScreen(props) {
           return (
             <button key={pl.name} onClick={function() { setSel(i); setPin(""); setErr(false); }}
               style={{ width: 85, padding: "16px 8px", borderRadius: 16, border: active ? "2px solid " + pl.color : "1px solid " + BD, background: active ? pl.color + "12" : S1, cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 8, boxShadow: active ? "0 0 20px " + pl.color + "30" : "none" }}>
-              <div style={{ fontSize: 32 }}>{pl.emoji}</div>
+              {pl.emoji.indexOf("svg_") === 0 ? (
+                <PlayerAvatar player={pl} size={40} rankInfo={null} />
+              ) : (
+                <div style={{ fontSize: 32 }}>{pl.emoji}</div>
+              )}
               <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 12, color: pl.color }}>{pl.name}</div>
             </button>
           );
