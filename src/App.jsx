@@ -483,7 +483,7 @@ function PlayerAvatar(props) {
   var player = props.player;
   var sz = props.size || 48;
   var ri = props.rankInfo;
-  var rankColor = ri ? ri.rank.color : player.color;
+  var rankColor = player.color;
   var tierName = ri ? ri.rank.tier : "Bronze";
 
   /* Scale factor based on size */
