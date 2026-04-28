@@ -1125,7 +1125,7 @@ function MatchCard(props) {
 
 /* ═══ DASHBOARD ═══ */
 function Dashboard(props) {
-  var matches = props.matches; var players = props.players; var user = props.currentUser; var onNav = props.onNav; var spoil = props.spoil;
+  var matches = props.matches; var players = props.players; var user = props.currentUser; var onNav = props.onNav; var spoil = props.spoil; var seasonName = props.seasonName || "LEC Spring";
   var stats = players.map(function(p) { var s = getStats(matches, p.name); var xp = getTotalXP(s); var r = getRank(xp); return Object.assign({}, p, s, { xp: xp, ri: r }); }).sort(function(a, b) { return b.total - a.total; });
   var me = stats.find(function(s) { return s.name === user; });
   var myRank = stats.findIndex(function(s) { return s.name === user; }) + 1;
@@ -1575,7 +1575,10 @@ function ProfilePage(props) {
 /* ═══ MAIN APP ═══ */
 export default function App() {
   var ms = useState([]); var matches = ms[0]; var setMatches = ms[1];
+  var am = useState([]); var allMatches = am[0]; var setAllMatches = am[1];
   var ps = useState([]); var players = ps[0]; var setPlayers = ps[1];
+  var ss = useState([]); var seasons = ss[0]; var setSeasons = ss[1];
+  var as2 = useState(null); var activeSeason = as2[0]; var setActiveSeason = as2[1];
   var li = useState(null); var loggedIn = li[0]; var setLoggedIn = li[1];
   var tb = useState("home"); var tab = tb[0]; var setTab = tb[1];
   var sp = useState(false); var spoil = sp[0]; var setSpoil = sp[1];
@@ -1592,6 +1595,7 @@ export default function App() {
       .on("postgres_changes", { event: "*", schema: "public", table: "matches" }, function() { loadData(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "preds" }, function() { loadData(); })
       .on("postgres_changes", { event: "*", schema: "public", table: "players" }, function() { loadData(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "seasons" }, function() { loadData(); })
       .subscribe();
     return function() { supabase.removeChannel(channel); };
   }, []);
@@ -1601,10 +1605,12 @@ export default function App() {
       supabase.from("players").select("*").order("id"),
       supabase.from("matches").select("*").order("id"),
       supabase.from("preds").select("*"),
+      supabase.from("seasons").select("*").order("id"),
     ]).then(function(results) {
       var pData = results[0].data || [];
       var mData = results[1].data || [];
       var prData = results[2].data || [];
+      var sData = results[3].data || [];
 
       /* Build players array */
       var builtPlayers = pData.map(function(p) {
@@ -1629,13 +1635,38 @@ export default function App() {
           id: m.id, week: m.week, day: m.day, team1: m.team1, team2: m.team2,
           bo: m.bo, cote1: m.cote1, cote2: m.cote2,
           winner: m.winner, score: m.score, preds: preds,
+          season_id: m.season_id,
         };
       });
 
+      /* Store all matches for global XP calculation */
+      setAllMatches(builtMatches);
+
+      /* Build seasons list */
+      var builtSeasons = sData.length > 0 ? sData : [{ id: 1, name: "LEC Spring 2026", short_name: "LEC Spring", status: "active" }];
+      setSeasons(builtSeasons);
+
+      /* Set active season to first active or first one if not set yet */
+      setActiveSeason(function(prev) {
+        if (prev !== null) return prev;
+        var act = builtSeasons.find(function(s) { return s.status === "active"; });
+        return act ? act.id : builtSeasons[0].id;
+      });
+
+      /* Filter matches for active season */
       setMatches(builtMatches);
       setLoading(false);
     });
   }
+
+  /* Get matches filtered by active season */
+  var seasonMatches = matches.filter(function(m) {
+    if (!activeSeason) return true;
+    return m.season_id === activeSeason || (!m.season_id && activeSeason === 1);
+  });
+
+  /* Get current season info */
+  var curSeason = seasons.find(function(s) { return s.id === activeSeason; }) || { name: "LEC Spring 2026", short_name: "LEC Spring" };
 
   function handleUpdate(mid, player, field, value) {
     if (player === "__result") {
@@ -1722,6 +1753,21 @@ export default function App() {
             <button onClick={function() { setLoggedIn(null); }} style={{ background: S2, border: "1px solid " + BD, borderRadius: 8, padding: "5px 8px", fontSize: 9, fontWeight: 600, color: TD, cursor: "pointer" }}>Quitter</button>
           </div>
         </div>
+        {/* Season selector */}
+        {seasons.length > 1 && (
+          <div style={{ margin: "8px 0 0" }}>
+            <select value={activeSeason || ""} onChange={function(e) { setActiveSeason(Number(e.target.value)); }}
+              style={{ background: S1, color: N1, border: "1px solid " + N1 + "30", borderRadius: 8, padding: "6px 12px", fontSize: 11, fontWeight: 700, fontFamily: FD, letterSpacing: 1, width: "100%", outline: "none", cursor: "pointer", appearance: "none", WebkitAppearance: "none", backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2300f0ff' d='M2 4l4 4 4-4'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 12px center" }}>
+              {seasons.map(function(s) {
+                var label = s.short_name || s.name;
+                if (s.status === "active") label = "🟢 " + label;
+                else if (s.status === "upcoming") label = "🔜 " + label;
+                else if (s.status === "finished") label = "✅ " + label;
+                return <option key={s.id} value={s.id}>{label}</option>;
+              })}
+            </select>
+          </div>
+        )}
         {spoil && (
           <div style={{ margin: "8px 0 0", padding: "5px 12px", borderRadius: 8, background: N3 + "10", border: "1px solid " + N3 + "25", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <span style={{ fontSize: 10, color: N3, fontWeight: 600 }}>🔒 Anti-spoil actif</span>
@@ -1736,10 +1782,10 @@ export default function App() {
       </div>
 
       <div style={{ padding: "14px 16px 70px", maxWidth: 660, margin: "0 auto" }}>
-        {tab === "home" && <Dashboard matches={matches} players={players} currentUser={currentUser} onNav={setTab} spoil={spoil} />}
-        {tab === "matches" && <MatchesPage matches={matches} players={players} onUpdate={handleUpdate} currentUser={currentUser} isAdmin={isAdmin} spoil={spoil} />}
-        {tab === "stats" && <StatsPage matches={matches} players={players} spoil={spoil} />}
-        {tab === "profile" && <ProfilePage matches={matches} players={players} currentUser={currentUser} onUpdatePlayer={handleUpdatePlayer} onTogglePreview={handleTogglePreview} previewMode={previewMode} />}
+        {tab === "home" && <Dashboard matches={seasonMatches} players={players} currentUser={currentUser} onNav={setTab} spoil={spoil} seasonName={curSeason.short_name || curSeason.name} />}
+        {tab === "matches" && <MatchesPage matches={seasonMatches} players={players} onUpdate={handleUpdate} currentUser={currentUser} isAdmin={isAdmin} spoil={spoil} />}
+        {tab === "stats" && <StatsPage matches={seasonMatches} players={players} spoil={spoil} />}
+        {tab === "profile" && <ProfilePage matches={allMatches} players={players} currentUser={currentUser} onUpdatePlayer={handleUpdatePlayer} onTogglePreview={handleTogglePreview} previewMode={previewMode} />}
       </div>
     </div>
   );
