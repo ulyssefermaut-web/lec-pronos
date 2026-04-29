@@ -1,5 +1,5 @@
 
-Copier
+
 
 /**
  * LEC PRONOS - Sync LoL Esports API -> Supabase
