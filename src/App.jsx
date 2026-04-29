@@ -1021,13 +1021,17 @@ function MatchCard(props) {
   var m = props.match; var players = props.players; var onUpdate = props.onUpdate;
   var user = props.currentUser; var isAdmin = props.isAdmin; var spoil = props.spoil;
   var ex = useState(false); var expanded = ex[0]; var setEx = ex[1];
-  var played = !!m.winner;
+  var hasResult = !!m.winner;
+  var revealed = m.revealed !== false; /* default to true if not set */
+  var played = hasResult && revealed;
+  var locked = m.locked || false;
+  var pendingResult = hasResult && !revealed; /* has result but not yet revealed */
   var scores = m.bo === 5 ? SC5 : SC3;
   var myPred = m.preds[user] || {};
 
   return (
-    <div style={{ background: S1, borderRadius: 14, overflow: "hidden", border: played ? "1px solid " + BD : "1px solid " + N1 + "30", boxShadow: !played ? "0 0 15px " + N1 + "08" : "none" }}>
-      {!played && (
+    <div style={{ background: S1, borderRadius: 14, overflow: "hidden", border: played ? "1px solid " + BD : pendingResult ? "1px solid " + N2 + "30" : "1px solid " + N1 + "30", boxShadow: !played && !pendingResult ? "0 0 15px " + N1 + "08" : "none" }}>
+      {!played && !pendingResult && (
         <div style={{ background: "linear-gradient(90deg, " + N1 + "12, transparent)", padding: "5px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
             <span style={{ width: 6, height: 6, borderRadius: "50%", background: NG, display: "inline-block", animation: "pulse 2s infinite" }} />
@@ -1041,8 +1045,17 @@ function MatchCard(props) {
           </div>
         </div>
       )}
+      {pendingResult && (
+        <div style={{ background: "linear-gradient(90deg, " + N2 + "12, transparent)", padding: "5px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 10 }}>⏳</span>
+            <span style={{ fontSize: 10, fontWeight: 700, color: N2, letterSpacing: 1 }}>EN ATTENTE</span>
+          </div>
+          <span style={{ fontSize: 9, color: TD }}>{m.day}</span>
+        </div>
+      )}
       {played && <div style={{ padding: "3px 14px", background: S2 }}><span style={{ fontSize: 9, color: TD, letterSpacing: 1 }}>{spoil ? m.day : "TERMINE - " + m.day}</span></div>}
-      <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={function() { setEx(!expanded); }}>
+      <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={function() { if (!locked || isAdmin) setEx(!expanded); }}>
         <TeamLogo team={m.team1} size={32} />
         <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 13, flex: 1, textAlign: "right", color: !spoil && played && m.winner === m.team1 ? NG : TP }}>{m.team1}</span>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 72 }}>
@@ -1053,19 +1066,27 @@ function MatchCard(props) {
           </div>
           {played && !spoil && <div style={{ fontFamily: FD, fontSize: 20, fontWeight: 800, color: NG, letterSpacing: 2 }}>{m.score}</div>}
           {played && spoil && <div style={{ fontSize: 14, marginTop: 2 }}>🔒</div>}
-          {!played && <div style={{ fontSize: 13, fontWeight: 800, color: N1, marginTop: 2 }}>VS</div>}
+          {pendingResult && <div style={{ fontSize: 14, marginTop: 2 }}>⏳</div>}
+          {!played && !pendingResult && <div style={{ fontSize: 13, fontWeight: 800, color: N1, marginTop: 2 }}>VS</div>}
         </div>
         <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 13, flex: 1, color: !spoil && played && m.winner === m.team2 ? NG : TP }}>{m.team2}</span>
         <TeamLogo team={m.team2} size={32} />
-        <span style={{ fontSize: 10, color: TD, transform: expanded ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>
+        {(!locked || isAdmin) && <span style={{ fontSize: 10, color: TD, transform: expanded ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>}
       </div>
-      {!played && !expanded && (
+      {!played && !pendingResult && !expanded && (
         <div style={{ padding: "0 14px 10px" }}>
-          {myPred.winner ? (
+          {locked ? (
+            <div style={{ padding: "6px 10px", borderRadius: 8, background: TD + "10", border: "1px solid " + TD + "25", fontSize: 11, color: TD, fontWeight: 600 }}>🔒 Prono verrouille{myPred.winner ? " : " + myPred.winner + " - " + myPred.score : ""}</div>
+          ) : myPred.winner ? (
             <div style={{ padding: "6px 10px", borderRadius: 8, background: NG + "10", border: "1px solid " + NG + "25", fontSize: 11, color: NG, fontWeight: 600 }}>Ton prono : {myPred.winner} - {myPred.score}</div>
           ) : (
             <div style={{ padding: "6px 10px", borderRadius: 8, background: N2 + "10", border: "1px solid " + N2 + "25", fontSize: 11, color: N2, fontWeight: 600 }}>Clique pour pronostiquer</div>
           )}
+        </div>
+      )}
+      {pendingResult && (
+        <div style={{ padding: "0 14px 10px" }}>
+          <div style={{ padding: "6px 10px", borderRadius: 8, background: N2 + "08", border: "1px solid " + N2 + "20", fontSize: 11, color: N2, fontWeight: 600 }}>⏳ Resultat devoile au prochain match day{myPred.winner ? " | Ton prono : " + myPred.winner + " " + myPred.score : ""}</div>
         </div>
       )}
       {played && !spoil && (
@@ -1126,14 +1147,15 @@ function MatchCard(props) {
 /* ═══ DASHBOARD ═══ */
 function Dashboard(props) {
   var matches = props.matches; var players = props.players; var user = props.currentUser; var onNav = props.onNav; var spoil = props.spoil; var seasonName = props.seasonName || "LEC Spring";
-  var stats = players.map(function(p) { var s = getStats(matches, p.name); var xp = getTotalXP(s); var r = getRank(xp); return Object.assign({}, p, s, { xp: xp, ri: r }); }).sort(function(a, b) { return b.total - a.total; });
+  var revealedMatches = matches.filter(function(m) { return m.revealed !== false; });
+  var stats = players.map(function(p) { var s = getStats(revealedMatches, p.name); var xp = getTotalXP(s); var r = getRank(xp); return Object.assign({}, p, s, { xp: xp, ri: r }); }).sort(function(a, b) { return b.total - a.total; });
   var me = stats.find(function(s) { return s.name === user; });
   var myRank = stats.findIndex(function(s) { return s.name === user; }) + 1;
-  var myPending = matches.filter(function(m) { return !m.winner && (!m.preds[user] || !m.preds[user].winner); });
-  var upcoming = matches.filter(function(m) { return !m.winner; }).slice(0, 3);
+  var myPending = matches.filter(function(m) { return !m.winner && !m.locked && (!m.preds[user] || !m.preds[user].winner); });
+  var upcoming = matches.filter(function(m) { return !m.winner && !m.locked; }).slice(0, 3);
 
   var feed = [];
-  matches.forEach(function(m) { if (!m.winner) return; players.forEach(function(p) { var pr = m.preds[p.name]; if (!pr || !pr.winner) return; var pt = calcPts(m, pr); if (pt > 0) { feed.push({ p: p, txt: (pr.score === m.score ? "Parfait +" : "+") + rd(pt) + " pts", mt: m.team1 + " vs " + m.team2, pf: pr.score === m.score }); } }); });
+  revealedMatches.forEach(function(m) { if (!m.winner) return; players.forEach(function(p) { var pr = m.preds[p.name]; if (!pr || !pr.winner) return; var pt = calcPts(m, pr); if (pt > 0) { feed.push({ p: p, txt: (pr.score === m.score ? "Parfait +" : "+") + rd(pt) + " pts", mt: m.team1 + " vs " + m.team2, pf: pr.score === m.score }); } }); });
   feed.reverse(); feed = feed.slice(0, 5);
 
   return (
@@ -1264,8 +1286,9 @@ function MatchesPage(props) {
   var wf = useState("all"); var weekFilter = wf[0]; var setWf = wf[1];
   var weeks = []; matches.forEach(function(m) { if (weeks.indexOf(m.week) === -1) weeks.push(m.week); }); weeks.sort();
   var fil = weekFilter === "all" ? matches : matches.filter(function(m) { return m.week === Number(weekFilter); });
-  var up = fil.filter(function(m) { return !m.winner; });
-  var done = fil.filter(function(m) { return !!m.winner; });
+  var up = fil.filter(function(m) { return !m.winner && !m.locked; });
+  var pending = fil.filter(function(m) { return (m.winner && !m.revealed) || (m.locked && !m.winner); });
+  var done = fil.filter(function(m) { return m.winner && m.revealed !== false; });
 
   return (
     <div>
@@ -1281,7 +1304,15 @@ function MatchesPage(props) {
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{up.map(function(m) { return <MatchCard key={m.id} match={m} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} />; })}</div>
         </div>
       )}
-      {up.length > 0 && done.length > 0 && <div style={{ height: 1, background: "linear-gradient(90deg, transparent, " + BD + ", transparent)", margin: "0 0 20px" }} />}
+      {pending.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ padding: "8px 14px", borderRadius: 10, background: "linear-gradient(90deg, " + N2 + "10, transparent)", borderLeft: "3px solid " + N2, marginBottom: 10 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: N2, letterSpacing: 2, fontFamily: FD }}>EN ATTENTE ({pending.length})</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{pending.map(function(m) { return <MatchCard key={m.id} match={m} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} />; })}</div>
+        </div>
+      )}
+      {(up.length > 0 || pending.length > 0) && done.length > 0 && <div style={{ height: 1, background: "linear-gradient(90deg, transparent, " + BD + ", transparent)", margin: "0 0 20px" }} />}
       {done.length > 0 && (
         <div>
           <div style={{ padding: "8px 14px", borderRadius: 10, background: S2, borderLeft: "3px solid " + TD, marginBottom: 10 }}>
@@ -1635,7 +1666,7 @@ export default function App() {
           id: m.id, week: m.week, day: m.day, team1: m.team1, team2: m.team2,
           bo: m.bo, cote1: m.cote1, cote2: m.cote2,
           winner: m.winner, score: m.score, preds: preds,
-          season_id: m.season_id,
+          season_id: m.season_id, start_time: m.start_time,
         };
       });
 
@@ -1663,6 +1694,33 @@ export default function App() {
   var seasonMatches = matches.filter(function(m) {
     if (!activeSeason) return true;
     return m.season_id === activeSeason || (!m.season_id && activeSeason === 1);
+  });
+
+  /* Calculate reveal status for each match */
+  /* A week's results are revealed when the first match of the NEXT week has started */
+  var now = new Date();
+  seasonMatches = seasonMatches.map(function(m) {
+    if (!m.winner) {
+      /* Match not played yet - check if prono is still open (match hasn't started) */
+      var matchStart = m.start_time ? new Date(m.start_time) : null;
+      var locked = matchStart ? now >= matchStart : false;
+      return Object.assign({}, m, { revealed: false, locked: locked });
+    }
+    /* Match has a result - check if next week's first match has started */
+    var nextWeek = m.week + 1;
+    var nextWeekMatches = seasonMatches.filter(function(nm) { return nm.week === nextWeek && nm.start_time; });
+    if (nextWeekMatches.length === 0) {
+      /* No next week exists yet - reveal results immediately (last week of season) */
+      /* Or if no start_time data, fall back to revealed */
+      return Object.assign({}, m, { revealed: true, locked: true });
+    }
+    /* Find the earliest start_time of the next week */
+    var earliest = nextWeekMatches.reduce(function(min, nm) {
+      var t = new Date(nm.start_time);
+      return t < min ? t : min;
+    }, new Date(nextWeekMatches[0].start_time));
+    var isRevealed = now >= earliest;
+    return Object.assign({}, m, { revealed: isRevealed, locked: true });
   });
 
   /* Get current season info */
