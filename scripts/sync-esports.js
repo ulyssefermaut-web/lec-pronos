@@ -41,23 +41,22 @@ var TEAM_MAP = {
   "LR": "Los Ratones",
 };
  
-/* League IDs to sync - add more as needed */
+/* League configs */
 var LEAGUES_TO_SYNC = [
-  { leagueId: "98767991302996019", seasonName: "LEC" },
+  { leagueId: "98767991302996019", seasonName: "LEC", boFilter: 3 },
 ];
  
 function teamName(code) {
   return TEAM_MAP[code] || code;
 }
  
-function buildScore(team1Wins, team2Wins) {
-  return team1Wins + "-" + team2Wins;
-}
- 
 function extractWeek(blockName) {
   if (!blockName) return null;
-  var m = blockName.match(/\d+/);
-  return m ? parseInt(m[0]) : null;
+  var m = blockName.match(/[Ss]emaine\s*(\d+)/);
+  if (!m) {
+    m = blockName.match(/[Ww]eek\s*(\d+)/);
+  }
+  return m ? parseInt(m[1]) : null;
 }
  
 function formatDay(startTime) {
@@ -78,24 +77,37 @@ async function fetchEsportsSchedule(leagueId) {
   return data.data.schedule.events || [];
 }
  
-async function syncLeague(leagueId, seasonPrefix) {
-  console.log("--- Syncing " + seasonPrefix + " ---");
+/* Find a match in existing DB, checking both team orders */
+function findExistingMatch(existing, t1name, t2name, week) {
+  return existing.find(function(m) {
+    var sameOrder = m.team1 === t1name && m.team2 === t2name;
+    var reverseOrder = m.team1 === t2name && m.team2 === t1name;
+    return (sameOrder || reverseOrder) && m.week === week;
+  });
+}
+ 
+async function syncLeague(leagueId, seasonName, boFilter) {
+  console.log("--- Syncing " + seasonName + " ---");
  
   /* 1. Fetch events from API */
   var events = await fetchEsportsSchedule(leagueId);
   
-  /* Filter only Bo3/Bo5 matches (skip Bo1 from LEC Versus etc) */
+  /* Filter: only matches with the right Bo count AND a valid week number */
   var boMatches = events.filter(function(e) {
-    return e.type === "match" && e.match && e.match.strategy.count >= 3;
+    if (e.type !== "match" || !e.match) return false;
+    if (e.match.strategy.count !== boFilter) return false;
+    var week = extractWeek(e.blockName);
+    if (!week) return false;
+    return true;
   });
  
-  console.log("Found " + boMatches.length + " Bo3/Bo5 matches from API");
+  console.log("Found " + boMatches.length + " Bo" + boFilter + " matches with valid week from API");
  
   /* 2. Get season from Supabase */
-  var seasonRes = await supabase.from("seasons").select("*").ilike("name", "%" + seasonPrefix + "%Spring%");
+  var seasonRes = await supabase.from("seasons").select("*").ilike("name", "%" + seasonName + "%Spring%");
   var season = seasonRes.data && seasonRes.data[0];
   if (!season) {
-    console.log("No matching season found for " + seasonPrefix + ", skipping");
+    console.log("No matching season found for " + seasonName + ", skipping");
     return;
   }
   console.log("Using season: " + season.name + " (id=" + season.id + ")");
@@ -107,6 +119,7 @@ async function syncLeague(leagueId, seasonPrefix) {
  
   var updated = 0;
   var added = 0;
+  var skipped = 0;
  
   for (var i = 0; i < boMatches.length; i++) {
     var evt = boMatches[i];
@@ -118,30 +131,37 @@ async function syncLeague(leagueId, seasonPrefix) {
     var day = formatDay(evt.startTime);
     var bo = evt.match.strategy.count;
  
-    /* Find matching existing match */
-    var found = existing.find(function(m) {
-      return m.team1 === t1name && m.team2 === t2name && m.week === week;
-    });
+    /* Find matching existing match (checks both team orders) */
+    var found = findExistingMatch(existing, t1name, t2name, week);
  
     if (evt.state === "completed") {
       var t1wins = evt.match.teams[0].result.gameWins;
       var t2wins = evt.match.teams[1].result.gameWins;
-      var score = buildScore(t1wins, t2wins);
       var winner = t1wins > t2wins ? t1name : t2name;
  
       if (found) {
-        /* Update result if not already set */
-        if (!found.winner || found.winner !== winner) {
+        /* Update result only if not already set */
+        if (!found.winner) {
+          /* Build score in the order of our DB (team1-team2) */
+          var score;
+          if (found.team1 === t1name) {
+            score = t1wins + "-" + t2wins;
+          } else {
+            score = t2wins + "-" + t1wins;
+          }
           await supabase.from("matches").update({
             winner: winner,
             score: score
           }).eq("id", found.id);
-          console.log("  Updated result: " + t1name + " vs " + t2name + " -> " + winner + " " + score);
+          console.log("  Updated: " + found.team1 + " vs " + found.team2 + " -> " + winner + " " + score);
           updated++;
+        } else {
+          skipped++;
         }
       } else {
-        /* Insert new completed match */
+        /* New completed match not in DB - add it */
         var maxId = await getMaxMatchId();
+        var newScore = t1wins + "-" + t2wins;
         await supabase.from("matches").insert({
           id: maxId + 1,
           season_id: season.id,
@@ -153,14 +173,14 @@ async function syncLeague(leagueId, seasonPrefix) {
           cote1: 1.5,
           cote2: 2.5,
           winner: winner,
-          score: score
+          score: newScore
         });
-        console.log("  Added completed: " + t1name + " vs " + t2name + " (W" + week + ") -> " + winner + " " + score);
+        console.log("  Added completed: " + t1name + " vs " + t2name + " (W" + week + ") -> " + winner + " " + newScore);
         added++;
       }
     } else if (evt.state === "unstarted") {
       if (!found) {
-        /* Insert new upcoming match */
+        /* New upcoming match - add it */
         var maxId2 = await getMaxMatchId();
         await supabase.from("matches").insert({
           id: maxId2 + 1,
@@ -177,11 +197,13 @@ async function syncLeague(leagueId, seasonPrefix) {
         });
         console.log("  Added upcoming: " + t1name + " vs " + t2name + " (W" + week + ")");
         added++;
+      } else {
+        skipped++;
       }
     }
   }
  
-  console.log("Done: " + updated + " updated, " + added + " added\n");
+  console.log("Done: " + updated + " updated, " + added + " added, " + skipped + " already up to date\n");
 }
  
 async function getMaxMatchId() {
@@ -196,7 +218,7 @@ async function main() {
  
   for (var i = 0; i < LEAGUES_TO_SYNC.length; i++) {
     var league = LEAGUES_TO_SYNC[i];
-    await syncLeague(league.leagueId, league.seasonName);
+    await syncLeague(league.leagueId, league.seasonName, league.boFilter);
   }
  
   console.log("=== Sync complete ===");
