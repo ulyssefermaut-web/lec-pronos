@@ -1281,6 +1281,67 @@ function Dashboard(props) {
 }
 
 /* ═══ MATCHES PAGE ═══ */
+
+/* Helper: render a list of matches grouped by week then day */
+function MatchListGrouped(props) {
+  var list = props.matches; var players = props.players; var onUpdate = props.onUpdate;
+  var user = props.currentUser; var isAdmin = props.isAdmin; var spoil = props.spoil;
+  if (list.length === 0) return null;
+
+  /* Group by week */
+  var weekGroups = [];
+  var weekMap = {};
+  list.forEach(function(m) {
+    var w = m.week || 0;
+    if (!weekMap[w]) { weekMap[w] = []; weekGroups.push(w); }
+    weekMap[w].push(m);
+  });
+  weekGroups.sort(function(a, b) { return a - b; });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+      {weekGroups.map(function(w) {
+        var weekMatches = weekMap[w];
+        /* Group by day within week */
+        var dayGroups = [];
+        var dayMap = {};
+        weekMatches.forEach(function(m) {
+          var d = m.day || "?";
+          if (!dayMap[d]) { dayMap[d] = []; dayGroups.push(d); }
+          dayMap[d].push(m);
+        });
+
+        return (
+          <div key={w} style={{ marginBottom: 8 }}>
+            {/* Week header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0 6px" }}>
+              <div style={{ height: 1, flex: 1, background: N1 + "20" }} />
+              <span style={{ fontSize: 10, fontWeight: 800, color: N1, letterSpacing: 3, fontFamily: FD }}>SEMAINE {w}</span>
+              <div style={{ height: 1, flex: 1, background: N1 + "20" }} />
+            </div>
+            {dayGroups.map(function(d) {
+              var dayMatches = dayMap[d];
+              return (
+                <div key={d} style={{ marginBottom: 6 }}>
+                  {/* Day header */}
+                  <div style={{ padding: "4px 10px", marginBottom: 6 }}>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: TD, letterSpacing: 2, fontFamily: FD }}>{d}</span>
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {dayMatches.map(function(m) {
+                      return <MatchCard key={m.id} match={m} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={spoil} />;
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function MatchesPage(props) {
   var matches = props.matches; var players = props.players; var onUpdate = props.onUpdate; var user = props.currentUser; var isAdmin = props.isAdmin; var spoil = props.spoil;
   var wf = useState("all"); var weekFilter = wf[0]; var setWf = wf[1];
@@ -1301,7 +1362,7 @@ function MatchesPage(props) {
           <div style={{ padding: "8px 14px", borderRadius: 10, background: "linear-gradient(90deg, " + N1 + "10, transparent)", borderLeft: "3px solid " + N1, marginBottom: 10 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: N1, letterSpacing: 2, fontFamily: FD }}>A VENIR ({up.length})</span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{up.map(function(m) { return <MatchCard key={m.id} match={m} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} />; })}</div>
+          <MatchListGrouped matches={up} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} />
         </div>
       )}
       {pending.length > 0 && (
@@ -1309,7 +1370,7 @@ function MatchesPage(props) {
           <div style={{ padding: "8px 14px", borderRadius: 10, background: "linear-gradient(90deg, " + N2 + "10, transparent)", borderLeft: "3px solid " + N2, marginBottom: 10 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: N2, letterSpacing: 2, fontFamily: FD }}>EN ATTENTE ({pending.length})</span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>{pending.map(function(m) { return <MatchCard key={m.id} match={m} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} />; })}</div>
+          <MatchListGrouped matches={pending} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} />
         </div>
       )}
       {(up.length > 0 || pending.length > 0) && done.length > 0 && <div style={{ height: 1, background: "linear-gradient(90deg, transparent, " + BD + ", transparent)", margin: "0 0 20px" }} />}
@@ -1318,7 +1379,7 @@ function MatchesPage(props) {
           <div style={{ padding: "8px 14px", borderRadius: 10, background: S2, borderLeft: "3px solid " + TD, marginBottom: 10 }}>
             <span style={{ fontSize: 12, fontWeight: 700, color: TD, letterSpacing: 2, fontFamily: FD }}>TERMINES ({done.length})</span>
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>{done.map(function(m) { return <MatchCard key={m.id} match={m} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={spoil} />; })}</div>
+          <MatchListGrouped matches={done} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={spoil} />
         </div>
       )}
     </div>
