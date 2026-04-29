@@ -12,7 +12,7 @@
  * - MSI: 98767991325878492
  */
  
-var createClient = require("@supabase/supabase-js").createClient;
+import { createClient } from "@supabase/supabase-js";
  
 var SUPABASE_URL = process.env.SUPABASE_URL;
 var SUPABASE_KEY = process.env.SUPABASE_KEY;
