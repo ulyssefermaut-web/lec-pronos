@@ -1153,20 +1153,80 @@ function Dashboard(props) {
   var myRank = stats.findIndex(function(s) { return s.name === user; }) + 1;
   var myPending = matches.filter(function(m) { return !m.winner && !m.locked && (!m.preds[user] || !m.preds[user].winner); });
   var upcoming = matches.filter(function(m) { return !m.winner && !m.locked; }).slice(0, 3);
+  var maxPts = stats.length > 0 ? stats[0].total : 1;
 
+  /* Countdown to next match */
+  var nextMatch = matches.find(function(m) { return !m.winner && m.start_time && new Date(m.start_time) > new Date(); });
+  var ct = useState(null); var countdown = ct[0]; var setCountdown = ct[1];
+  useEffect(function() {
+    if (!nextMatch || !nextMatch.start_time) return;
+    function tick() {
+      var now = new Date();
+      var target = new Date(nextMatch.start_time);
+      var diff = target - now;
+      if (diff <= 0) { setCountdown(null); return; }
+      var d = Math.floor(diff / 86400000);
+      var h = Math.floor((diff % 86400000) / 3600000);
+      var mn = Math.floor((diff % 3600000) / 60000);
+      var s = Math.floor((diff % 60000) / 1000);
+      setCountdown({ d: d, h: h, m: mn, s: s });
+    }
+    tick();
+    var iv = setInterval(tick, 1000);
+    return function() { clearInterval(iv); };
+  }, [nextMatch ? nextMatch.id : null]);
+
+  /* Current streak per player */
+  function getStreak(pname) {
+    var played = revealedMatches.filter(function(m) { return m.winner && m.preds[pname] && m.preds[pname].winner; });
+    var streak = 0;
+    for (var i = played.length - 1; i >= 0; i--) {
+      if (played[i].preds[pname].winner === played[i].winner) streak++;
+      else break;
+    }
+    return streak;
+  }
+
+  /* Weekly summary */
+  var completedWeeks = [];
+  revealedMatches.forEach(function(m) { if (m.winner && m.week && completedWeeks.indexOf(m.week) === -1) completedWeeks.push(m.week); });
+  completedWeeks.sort(function(a, b) { return b - a; });
+  var latestWeek = completedWeeks[0] || null;
+  var weeklyBest = null;
+  if (latestWeek) {
+    var weekMatches = revealedMatches.filter(function(m) { return m.week === latestWeek && m.winner; });
+    weeklyBest = players.map(function(p) {
+      var pts = 0; var wins = 0; var perfects = 0;
+      weekMatches.forEach(function(m) {
+        var pr = m.preds[p.name]; if (!pr || !pr.winner) return;
+        var pt = calcPts(m, pr); if (pt > 0) { pts = pts + pt; wins++; }
+        if (pr.score === m.score && pt > 0) perfects++;
+      });
+      return { name: p.name, color: p.color, emoji: p.emoji, pts: Math.round(pts * 10) / 10, wins: wins, perfects: perfects, total: weekMatches.length };
+    }).sort(function(a, b) { return b.pts - a.pts; });
+  }
+
+  /* Activity feed */
   var feed = [];
-  revealedMatches.forEach(function(m) { if (!m.winner) return; players.forEach(function(p) { var pr = m.preds[p.name]; if (!pr || !pr.winner) return; var pt = calcPts(m, pr); if (pt > 0) { feed.push({ p: p, txt: (pr.score === m.score ? "Parfait +" : "+") + rd(pt) + " pts", mt: m.team1 + " vs " + m.team2, pf: pr.score === m.score }); } }); });
-  feed.reverse(); feed = feed.slice(0, 5);
+  revealedMatches.forEach(function(m) {
+    if (!m.winner) return;
+    players.forEach(function(p) {
+      var pr = m.preds[p.name]; if (!pr || !pr.winner) return;
+      var pt = calcPts(m, pr); var pf = pr.score === m.score && pt > 0;
+      var upset = pt > 0 && ((m.winner === m.team1 && m.cote1 > m.cote2) || (m.winner === m.team2 && m.cote2 > m.cote1));
+      feed.push({ p: p, pts: pt, pf: pf, upset: upset, emoji: pf ? "★" : upset ? "🎲" : pt > 0 ? "✓" : "✗", mt: m.team1 + " vs " + m.team2, week: m.week });
+    });
+  });
+  feed.reverse(); feed = feed.slice(0, 8);
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <NeonCard glow={me ? me.color : N1}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           {me && <PlayerAvatar player={me} size={52} rankInfo={me.ri} />}
           <div style={{ flex: 1 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               {me ? <PlayerName player={me} size={16} /> : <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 16, color: TP }}>{user}</span>}
-              <span style={{ fontSize: 11, color: TD }}>Salut !</span>
             </div>
             {me && me.title && <TitleTag titleId={me.title} />}
             {me && <div style={{ marginTop: 4 }}><RankBadge rank={me.ri.rank} /></div>}
@@ -1181,12 +1241,32 @@ function Dashboard(props) {
           </div>
           {!spoil && me && (
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 22, color: TP }}>{me.total}<span style={{ fontSize: 10, color: TD }}> pts</span></div>
-              <div style={{ fontSize: 10, color: TD }}>{myRank}{myRank === 1 ? "er" : "e"}</div>
+              <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 24, color: TP }}>{me.total}<span style={{ fontSize: 10, color: TD }}> pts</span></div>
+              <div style={{ fontSize: 11, color: myRank === 1 ? "#FFD700" : myRank === 2 ? "#C0C0C0" : TD, fontWeight: 700 }}>#{myRank}</div>
             </div>
           )}
         </div>
       </NeonCard>
+
+      {nextMatch && countdown && (
+        <div style={{ background: "linear-gradient(135deg, " + N1 + "08, " + N2 + "08)", border: "1px solid " + N1 + "20", borderRadius: 14, padding: "12px 16px", textAlign: "center" }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: TD, letterSpacing: 3, marginBottom: 8 }}>PROCHAIN MATCH</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 8 }}>
+            <TeamLogo team={nextMatch.team1} size={28} />
+            <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 13, color: TP }}>{nextMatch.team1}</span>
+            <span style={{ fontSize: 11, color: N1, fontWeight: 800 }}>VS</span>
+            <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 13, color: TP }}>{nextMatch.team2}</span>
+            <TeamLogo team={nextMatch.team2} size={28} />
+          </div>
+          <div style={{ display: "flex", justifyContent: "center", gap: 6 }}>
+            {countdown.d > 0 && <div style={{ background: S1, border: "1px solid " + BD, borderRadius: 8, padding: "6px 10px", minWidth: 40, textAlign: "center" }}><div style={{ fontFamily: FD, fontWeight: 800, fontSize: 18, color: N1 }}>{countdown.d}</div><div style={{ fontSize: 7, color: TD, letterSpacing: 1 }}>JOURS</div></div>}
+            <div style={{ background: S1, border: "1px solid " + BD, borderRadius: 8, padding: "6px 10px", minWidth: 40, textAlign: "center" }}><div style={{ fontFamily: FD, fontWeight: 800, fontSize: 18, color: N1 }}>{countdown.h}</div><div style={{ fontSize: 7, color: TD, letterSpacing: 1 }}>HEURES</div></div>
+            <div style={{ background: S1, border: "1px solid " + BD, borderRadius: 8, padding: "6px 10px", minWidth: 40, textAlign: "center" }}><div style={{ fontFamily: FD, fontWeight: 800, fontSize: 18, color: N1 }}>{countdown.m}</div><div style={{ fontSize: 7, color: TD, letterSpacing: 1 }}>MIN</div></div>
+            <div style={{ background: S1, border: "1px solid " + BD, borderRadius: 8, padding: "6px 10px", minWidth: 40, textAlign: "center" }}><div style={{ fontFamily: FD, fontWeight: 800, fontSize: 18, color: N1 }}>{countdown.s}</div><div style={{ fontSize: 7, color: TD, letterSpacing: 1 }}>SEC</div></div>
+          </div>
+          <div style={{ fontSize: 9, color: TD, marginTop: 6 }}>{nextMatch.day}</div>
+        </div>
+      )}
 
       {myPending.length > 0 && (
         <button onClick={function() { onNav("matches"); }} style={{ background: N2 + "10", border: "1px solid " + N2 + "30", borderRadius: 12, padding: "10px 16px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", width: "100%", textAlign: "left" }}>
@@ -1197,42 +1277,76 @@ function Dashboard(props) {
       )}
 
       {!spoil && (
-        <div style={{ display: "flex", gap: 8 }}>
-          {[{ l: "TOP SCORE", k: "total", u: " pts", c: N1 }, { l: "MEILLEUR WR", k: "wr", u: "%", c: N2 }, { l: "PARFAITS", k: "perfects", u: " ★", c: "#FFD700" }].map(function(aw) {
-            var best = stats.slice().sort(function(a, b) { return b[aw.k] - a[aw.k]; })[0];
-            return (
-              <div key={aw.l} style={{ flex: 1, background: S1, border: "1px solid " + BD, borderRadius: 12, padding: "10px 12px", textAlign: "center" }}>
-                <div style={{ fontSize: 8, fontWeight: 700, color: TD, letterSpacing: 2, marginBottom: 4 }}>{aw.l}</div>
-                <div style={{ fontSize: 18 }}>{best.emoji}</div>
-                <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, color: best.color }}>{best.name}</div>
-                <div style={{ fontSize: 10, color: aw.c, fontWeight: 700 }}>{best[aw.k]}{aw.u}</div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {!spoil && (
         <NeonCard glow={N1}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: N1, letterSpacing: 3, marginBottom: 10 }}>CLASSEMENT</div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: N1, letterSpacing: 3, marginBottom: 12 }}>CLASSEMENT - {seasonName.toUpperCase()}</div>
           {stats.map(function(s, i) {
+            var pct = maxPts > 0 ? (s.total / maxPts * 100) : 0;
+            var streak = getStreak(s.name);
             return (
-              <div key={s.name} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 0", borderBottom: i < stats.length - 1 ? "1px solid " + BD : "none" }}>
-                <span style={{ fontFamily: FD, fontWeight: 800, fontSize: 14, width: 20, textAlign: "center", color: i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : TD }}>{i + 1}</span>
-                <PlayerAvatar player={s} size={32} rankInfo={s.ri} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-                    <PlayerName player={s} size={12} />
-                    <RankBadge rank={s.ri.rank} />
+              <div key={s.name} style={{ marginBottom: i < stats.length - 1 ? 10 : 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                  <span style={{ fontFamily: FD, fontWeight: 900, fontSize: 16, width: 22, textAlign: "center" }}>{i === 0 ? "🥇" : i === 1 ? "🥈" : i === 2 ? "🥉" : (i + 1)}</span>
+                  <PlayerAvatar player={s} size={34} rankInfo={s.ri} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                      <PlayerName player={s} size={12} />
+                      <RankBadge rank={s.ri.rank} />
+                      {streak >= 3 && <span style={{ fontSize: 8, padding: "1px 4px", borderRadius: 4, background: NG + "15", color: NG, fontWeight: 700 }}>🔥{streak}</span>}
+                    </div>
+                    {s.title && <TitleTag titleId={s.title} />}
                   </div>
-                  {s.title && <TitleTag titleId={s.title} />}
-                  <div style={{ fontSize: 9, color: TD }}>WR {s.wr}% - {s.perfects} parfait(s)</div>
+                  <div style={{ textAlign: "right" }}>
+                    <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 18, color: TP }}>{s.total}</div>
+                    <div style={{ fontSize: 8, color: TD }}>WR {s.wr}%</div>
+                  </div>
                 </div>
-                <span style={{ fontFamily: FD, fontWeight: 800, fontSize: 16, color: TP }}>{s.total}</span>
+                <div style={{ marginLeft: 64, height: 6, borderRadius: 3, background: BD, overflow: "hidden" }}>
+                  <div style={{ height: "100%", borderRadius: 3, background: "linear-gradient(90deg, " + s.color + "80, " + s.color + ")", width: pct + "%", transition: "width 0.5s" }} />
+                </div>
+                <div style={{ marginLeft: 64, display: "flex", gap: 8, marginTop: 2 }}>
+                  <span style={{ fontSize: 8, color: TD }}>{s.wins}W</span>
+                  <span style={{ fontSize: 8, color: TD }}>{s.perfects}★</span>
+                  <span style={{ fontSize: 8, color: TD }}>{s.games} matchs</span>
+                </div>
               </div>
             );
           })}
         </NeonCard>
+      )}
+
+      {!spoil && weeklyBest && latestWeek && (
+        <NeonCard glow={"#FFD700"}>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#FFD700", letterSpacing: 3, marginBottom: 10 }}>RECAP SEMAINE {latestWeek}</div>
+          {weeklyBest.map(function(ws, i) {
+            return (
+              <div key={ws.name} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < weeklyBest.length - 1 ? "1px solid " + BD : "none" }}>
+                <span style={{ fontFamily: FD, fontWeight: 800, fontSize: 13, width: 18, color: i === 0 ? "#FFD700" : TD }}>{i + 1}</span>
+                <span style={{ fontSize: 14 }}>{ws.emoji}</span>
+                <div style={{ flex: 1 }}>
+                  <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, color: ws.color }}>{ws.name}</span>
+                  <span style={{ fontSize: 9, color: TD, marginLeft: 6 }}>{ws.wins}/{ws.total} wins{ws.perfects > 0 ? " - " + ws.perfects + "★" : ""}</span>
+                </div>
+                <span style={{ fontFamily: FD, fontWeight: 800, fontSize: 14, color: i === 0 ? "#FFD700" : TP }}>+{ws.pts}</span>
+              </div>
+            );
+          })}
+        </NeonCard>
+      )}
+
+      {!spoil && (
+        <div style={{ display: "flex", gap: 6 }}>
+          {stats.map(function(s) {
+            var streak = getStreak(s.name);
+            return (
+              <div key={s.name} style={{ flex: 1, background: S1, border: "1px solid " + BD, borderRadius: 10, padding: "8px 4px", textAlign: "center" }}>
+                <span style={{ fontSize: 14 }}>{s.emoji}</span>
+                <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 10, color: s.color, marginTop: 2 }}>{s.name}</div>
+                <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 18, color: streak >= 3 ? NG : TP, marginTop: 2 }}>{streak}</div>
+                <div style={{ fontSize: 7, color: TD, letterSpacing: 1 }}>SERIE</div>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {spoil && <NeonCard glow={N3}><div style={{ textAlign: "center", padding: 20 }}><div style={{ fontSize: 24 }}>🔒</div><div style={{ fontSize: 10, fontWeight: 700, color: N3, marginTop: 8 }}>ANTI-SPOIL ACTIF</div></div></NeonCard>}
@@ -1255,7 +1369,7 @@ function Dashboard(props) {
                 </div>
                 <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, flex: 1 }}>{um.team2}</span>
                 <TeamLogo team={um.team2} size={22} />
-                <div style={{ background: done ? NG + "18" : N2 + "18", color: done ? NG : N2, fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6 }}>{done ? "OK" : "..."}</div>
+                <div style={{ background: done ? NG + "18" : N2 + "18", color: done ? NG : N2, fontSize: 9, fontWeight: 700, padding: "2px 6px", borderRadius: 6 }}>{done ? "✓" : "..."}</div>
               </div>
             );
           })}
@@ -1264,13 +1378,18 @@ function Dashboard(props) {
 
       {!spoil && feed.length > 0 && (
         <NeonCard glow={N2}>
-          <div style={{ fontSize: 10, fontWeight: 700, color: N2, letterSpacing: 3, marginBottom: 10 }}>ACTIVITE RECENTE</div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: N2, letterSpacing: 3, marginBottom: 10 }}>DERNIERS RESULTATS</div>
           {feed.map(function(f, i) {
             return (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: i < feed.length - 1 ? "1px solid " + BD : "none" }}>
-                <span style={{ fontSize: 14 }}>{f.p.emoji}</span>
-                <div style={{ flex: 1, fontSize: 10 }}><span style={{ fontWeight: 600, color: f.p.color }}>{f.p.name} </span><span style={{ color: TD }}>{f.txt} - {f.mt}</span></div>
-                {f.pf && <span style={{ color: "#FFD700" }}>★</span>}
+                <span style={{ fontSize: 12, width: 18, textAlign: "center" }}>{f.emoji}</span>
+                <span style={{ fontSize: 12 }}>{f.p.emoji}</span>
+                <div style={{ flex: 1, fontSize: 10 }}>
+                  <span style={{ fontWeight: 700, color: f.p.color }}>{f.p.name}</span>
+                  <span style={{ color: TD }}> {f.mt}</span>
+                  {f.upset && <span style={{ fontSize: 8, color: N2, marginLeft: 4 }}>UPSET</span>}
+                </div>
+                <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, color: f.pts > 0 ? (f.pf ? "#FFD700" : NG) : N3 }}>{f.pts > 0 ? "+" + rd(f.pts) : "0"}</span>
               </div>
             );
           })}
