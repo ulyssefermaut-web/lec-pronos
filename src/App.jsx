@@ -1282,10 +1282,24 @@ function Dashboard(props) {
 
 /* ═══ MATCHES PAGE ═══ */
 
-/* Helper: render a list of matches grouped by week then day */
+/* Collapsible section header */
+function CollapseHeader(props) {
+  var open = props.open; var onToggle = props.onToggle; var color = props.color || N1;
+  var count = props.count; var label = props.label; var icon = props.icon || "";
+  var bg = props.bg || color + "10"; var border = props.border || color;
+  return (
+    <button onClick={onToggle} style={{ width: "100%", padding: "8px 14px", borderRadius: 10, background: bg, borderLeft: "3px solid " + border, marginBottom: open ? 10 : 0, display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", border: "none", borderLeftStyle: "solid", borderLeftWidth: 3, borderLeftColor: border }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: color, letterSpacing: 2, fontFamily: FD }}>{icon}{label} ({count})</span>
+      <span style={{ fontSize: 12, color: color, transform: open ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>
+    </button>
+  );
+}
+
+/* Helper: render a list of matches grouped by week then day, with collapsible weeks */
 function MatchListGrouped(props) {
   var list = props.matches; var players = props.players; var onUpdate = props.onUpdate;
   var user = props.currentUser; var isAdmin = props.isAdmin; var spoil = props.spoil;
+  var defaultOpen = props.defaultOpenWeek;
   if (list.length === 0) return null;
 
   /* Group by week */
@@ -1298,10 +1312,28 @@ function MatchListGrouped(props) {
   });
   weekGroups.sort(function(a, b) { return a - b; });
 
+  /* State for open weeks - default: only the specified week is open */
+  var ow = useState(function() {
+    var init = {};
+    weekGroups.forEach(function(w) { init[w] = (w === defaultOpen); });
+    return init;
+  });
+  var openWeeks = ow[0]; var setOpenWeeks = ow[1];
+
+  function toggleWeek(w) {
+    setOpenWeeks(function(prev) {
+      var n = Object.assign({}, prev);
+      n[w] = !n[w];
+      return n;
+    });
+  }
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       {weekGroups.map(function(w) {
         var weekMatches = weekMap[w];
+        var isOpen = openWeeks[w];
+
         /* Group by day within week */
         var dayGroups = [];
         var dayMap = {};
@@ -1311,19 +1343,24 @@ function MatchListGrouped(props) {
           dayMap[d].push(m);
         });
 
+        /* Count pronos done for this week */
+        var predsDone = weekMatches.filter(function(m) { return m.preds[user] && m.preds[user].winner; }).length;
+
         return (
-          <div key={w} style={{ marginBottom: 8 }}>
-            {/* Week header */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "8px 0 6px" }}>
+          <div key={w} style={{ marginBottom: 4 }}>
+            {/* Collapsible week header */}
+            <button onClick={function() { toggleWeek(w); }}
+              style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "6px 0", cursor: "pointer", background: "transparent", border: "none" }}>
+              <div style={{ height: 1, flex: 0.3, background: N1 + "20" }} />
+              <span style={{ fontSize: 10, fontWeight: 800, color: N1, letterSpacing: 3, fontFamily: FD, whiteSpace: "nowrap" }}>SEMAINE {w}</span>
+              <span style={{ fontSize: 9, color: TD }}>({weekMatches.length} matchs{predsDone > 0 ? " - " + predsDone + " pronos" : ""})</span>
               <div style={{ height: 1, flex: 1, background: N1 + "20" }} />
-              <span style={{ fontSize: 10, fontWeight: 800, color: N1, letterSpacing: 3, fontFamily: FD }}>SEMAINE {w}</span>
-              <div style={{ height: 1, flex: 1, background: N1 + "20" }} />
-            </div>
-            {dayGroups.map(function(d) {
+              <span style={{ fontSize: 10, color: N1, transform: isOpen ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>
+            </button>
+            {isOpen && dayGroups.map(function(d) {
               var dayMatches = dayMap[d];
               return (
                 <div key={d} style={{ marginBottom: 6 }}>
-                  {/* Day header */}
                   <div style={{ padding: "4px 10px", marginBottom: 6 }}>
                     <span style={{ fontSize: 9, fontWeight: 700, color: TD, letterSpacing: 2, fontFamily: FD }}>{d}</span>
                   </div>
@@ -1351,6 +1388,17 @@ function MatchesPage(props) {
   var pending = fil.filter(function(m) { return (m.winner && !m.revealed) || (m.locked && !m.winner); });
   var done = fil.filter(function(m) { return m.winner && m.revealed !== false; });
 
+  /* Find current week (latest week with upcoming matches, or latest with pending) */
+  var currentWeek = null;
+  if (up.length > 0) { currentWeek = up[0].week; }
+  else if (pending.length > 0) { currentWeek = pending[0].week; }
+  else if (done.length > 0) { currentWeek = done[done.length - 1].week; }
+
+  /* Section collapse state */
+  var su = useState(true); var showUp = su[0]; var setShowUp = su[1];
+  var sp2 = useState(true); var showPend = sp2[0]; var setShowPend = sp2[1];
+  var sd = useState(false); var showDone = sd[0]; var setShowDone = sd[1];
+
   return (
     <div>
       <div style={{ display: "flex", gap: 5, marginBottom: 16, flexWrap: "wrap" }}>
@@ -1358,28 +1406,22 @@ function MatchesPage(props) {
         {weeks.map(function(w) { return <button key={w} onClick={function() { setWf(w); }} style={{ border: "1px solid " + BD, borderRadius: 8, padding: "5px 12px", fontSize: 10, fontWeight: 600, cursor: "pointer", fontFamily: FD, background: weekFilter === w ? N1 : S2, color: weekFilter === w ? BG : TD }}>W{w}</button>; })}
       </div>
       {up.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ padding: "8px 14px", borderRadius: 10, background: "linear-gradient(90deg, " + N1 + "10, transparent)", borderLeft: "3px solid " + N1, marginBottom: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: N1, letterSpacing: 2, fontFamily: FD }}>A VENIR ({up.length})</span>
-          </div>
-          <MatchListGrouped matches={up} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} />
+        <div style={{ marginBottom: 16 }}>
+          <CollapseHeader open={showUp} onToggle={function() { setShowUp(!showUp); }} color={N1} label="A VENIR" count={up.length} bg={"linear-gradient(90deg, " + N1 + "10, transparent)"} border={N1} />
+          {showUp && <MatchListGrouped matches={up} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} defaultOpenWeek={currentWeek} />}
         </div>
       )}
       {pending.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ padding: "8px 14px", borderRadius: 10, background: "linear-gradient(90deg, " + N2 + "10, transparent)", borderLeft: "3px solid " + N2, marginBottom: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: N2, letterSpacing: 2, fontFamily: FD }}>EN ATTENTE ({pending.length})</span>
-          </div>
-          <MatchListGrouped matches={pending} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} />
+        <div style={{ marginBottom: 16 }}>
+          <CollapseHeader open={showPend} onToggle={function() { setShowPend(!showPend); }} color={N2} label="EN ATTENTE" icon="⏳ " count={pending.length} bg={"linear-gradient(90deg, " + N2 + "10, transparent)"} border={N2} />
+          {showPend && <MatchListGrouped matches={pending} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} defaultOpenWeek={currentWeek} />}
         </div>
       )}
-      {(up.length > 0 || pending.length > 0) && done.length > 0 && <div style={{ height: 1, background: "linear-gradient(90deg, transparent, " + BD + ", transparent)", margin: "0 0 20px" }} />}
+      {(up.length > 0 || pending.length > 0) && done.length > 0 && <div style={{ height: 1, background: "linear-gradient(90deg, transparent, " + BD + ", transparent)", margin: "0 0 12px" }} />}
       {done.length > 0 && (
         <div>
-          <div style={{ padding: "8px 14px", borderRadius: 10, background: S2, borderLeft: "3px solid " + TD, marginBottom: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: TD, letterSpacing: 2, fontFamily: FD }}>TERMINES ({done.length})</span>
-          </div>
-          <MatchListGrouped matches={done} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={spoil} />
+          <CollapseHeader open={showDone} onToggle={function() { setShowDone(!showDone); }} color={TD} label="TERMINES" count={done.length} bg={S2} border={TD} />
+          {showDone && <MatchListGrouped matches={done} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={spoil} defaultOpenWeek={done[done.length - 1] ? done[done.length - 1].week : null} />}
         </div>
       )}
     </div>
@@ -1532,12 +1574,40 @@ function ProfilePage(props) {
       )}
 
       {activeSec === "custom" && (
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <NeonCard glow={N2}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: N2, letterSpacing: 2 }}>AVATAR</div>
-            </div>
-            {/* Avatar preview */}
+        <ProfileCustomCollapsible me={me} pi={pi} r={r} onUp={onUp} onToggle={onToggle} previewOn={previewOn} availAv={availAv} availOrn={availOrn} availCS={availCS} availT={availT} allIds={allIds} />
+      )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══ PROFILE CUSTOMIZATION with collapsible sections ═══ */
+function ProfileCustomCollapsible(props) {
+  var me = props.me; var pi = props.pi; var r = props.r; var onUp = props.onUp;
+  var onToggle = props.onToggle; var previewOn = props.previewOn;
+  var availAv = props.availAv; var availOrn = props.availOrn; var availCS = props.availCS;
+  var availT = props.availT; var allIds = props.allIds;
+
+  var s1 = useState(false); var showAvatar = s1[0]; var setShowAvatar = s1[1];
+  var s2 = useState(false); var showColor = s2[0]; var setShowColor = s2[1];
+  var s3 = useState(false); var showOrn = s3[0]; var setShowOrn = s3[1];
+  var s4 = useState(false); var showTitle = s4[0]; var setShowTitle = s4[1];
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {/* ── AVATAR ── */}
+      <NeonCard glow={N2} pad="0">
+        <button onClick={function() { setShowAvatar(!showAvatar); }}
+          style={{ width: "100%", padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", background: "transparent", border: "none" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 16 }}>{me.emoji.indexOf("svg_") === 0 ? "🎨" : me.emoji}</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: N2, letterSpacing: 2, fontFamily: FD }}>AVATAR</span>
+          </div>
+          <span style={{ fontSize: 10, color: N2, transform: showAvatar ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>
+        </button>
+        {showAvatar && (
+          <div style={{ padding: "0 14px 14px" }}>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
               <PlayerAvatar player={me} size={60} rankInfo={r} />
             </div>
@@ -1561,7 +1631,7 @@ function ProfilePage(props) {
                 return (
                   <button key={ea.id} disabled={!isAvail}
                     onClick={function() { if (isAvail) onUp(pi, Object.assign({}, me, { emoji: ea.id })); }}
-                    style={{ width: 50, padding: "4px 2px", borderRadius: 8, border: isActive ? "2px solid " + ea.color : isPrev ? "1px dashed " + ea.color + "60" : isAvail ? "1px solid " + ea.color + "40" : "1px solid " + BD, background: isActive ? ea.color + "15" : isPrev ? ea.color + "06" : isAvail ? S2 : S2, cursor: isAvail ? "pointer" : "not-allowed", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, opacity: isAvail ? 1 : 0.35 }}>
+                    style={{ width: 50, padding: "4px 2px", borderRadius: 8, border: isActive ? "2px solid " + ea.color : isPrev ? "1px dashed " + ea.color + "60" : isAvail ? "1px solid " + ea.color + "40" : "1px solid " + BD, background: isActive ? ea.color + "15" : isPrev ? ea.color + "06" : S2, cursor: isAvail ? "pointer" : "not-allowed", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, opacity: isAvail ? 1 : 0.35 }}>
                     <div style={{ width: 30, height: 30 }}>
                       <PlayerAvatar player={Object.assign({}, me, { emoji: ea.id, ornament: "none" })} size={30} rankInfo={null} />
                     </div>
@@ -1573,17 +1643,30 @@ function ProfilePage(props) {
             {!previewOn && EX_AVATARS.filter(function(ea) { return allIds.indexOf(ea.req) === -1; }).length > 0 && (
               <div style={{ fontSize: 9, color: TD, marginTop: 8, fontStyle: "italic" }}>🔒 {EX_AVATARS.filter(function(ea) { return allIds.indexOf(ea.req) === -1; }).length} avatars exclusifs a debloquer</div>
             )}
-          </NeonCard>
+          </div>
+        )}
+      </NeonCard>
 
-          <NeonCard glow={N1}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: N1, letterSpacing: 2, marginBottom: 10 }}>COULEUR DE BASE</div>
+      {/* ── COULEUR & STYLE ── */}
+      <NeonCard glow={N1} pad="0">
+        <button onClick={function() { setShowColor(!showColor); }}
+          style={{ width: "100%", padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", background: "transparent", border: "none" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div style={{ width: 14, height: 14, borderRadius: "50%", background: me.color }} />
+            <span style={{ fontSize: 11, fontWeight: 700, color: N1, letterSpacing: 2, fontFamily: FD }}>COULEUR & STYLE</span>
+          </div>
+          <span style={{ fontSize: 10, color: N1, transform: showColor ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>
+        </button>
+        {showColor && (
+          <div style={{ padding: "0 14px 14px" }}>
+            <div style={{ fontSize: 9, color: TD, marginBottom: 6 }}>COULEUR DE BASE</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 14 }}>
               {PCOLORS.map(function(co) {
                 return <button key={co} onClick={function() { onUp(pi, Object.assign({}, me, { color: co })); }}
                   style={{ width: 30, height: 30, borderRadius: "50%", border: me.color === co ? "3px solid #fff" : "2px solid transparent", background: co, cursor: "pointer" }} />;
               })}
             </div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: N1, letterSpacing: 2, marginBottom: 10 }}>STYLE DU NOM</div>
+            <div style={{ fontSize: 9, color: TD, marginBottom: 6 }}>STYLE DU NOM</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {CSTYLES.map(function(cs) {
                 var avail = availCS.indexOf(cs) !== -1;
@@ -1600,17 +1683,29 @@ function ProfilePage(props) {
                 );
               })}
             </div>
-          </NeonCard>
+          </div>
+        )}
+      </NeonCard>
 
-          <NeonCard glow={"#cd7f32"}>
+      {/* ── ORNEMENT ── */}
+      <NeonCard glow={"#cd7f32"} pad="0">
+        <button onClick={function() { setShowOrn(!showOrn); }}
+          style={{ width: "100%", padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", background: "transparent", border: "none" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 14 }}>💠</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#cd7f32", letterSpacing: 2, fontFamily: FD }}>ORNEMENT</span>
+          </div>
+          <span style={{ fontSize: 10, color: "#cd7f32", transform: showOrn ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>
+        </button>
+        {showOrn && (
+          <div style={{ padding: "0 14px 14px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "#cd7f32", letterSpacing: 2 }}>ORNEMENT (CADRE AVATAR)</div>
+              <span style={{ fontSize: 9, color: TD }}>Cadre avatar</span>
               <button onClick={function() { onToggle(); }}
                 style={{ padding: "3px 8px", borderRadius: 6, border: "1px solid " + (previewOn ? N2 : BD), background: previewOn ? N2 + "20" : S2, fontSize: 9, fontWeight: 600, color: previewOn ? N2 : TD, cursor: "pointer", fontFamily: FD }}>
                 {previewOn ? "Mode normal" : "Preview tout"}
               </button>
             </div>
-            {/* Avatar preview */}
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
               <PlayerAvatar player={me} size={70} rankInfo={r} />
             </div>
@@ -1638,10 +1733,23 @@ function ProfilePage(props) {
                 );
               })}
             </div>
-          </NeonCard>
+          </div>
+        )}
+      </NeonCard>
 
-          <NeonCard glow={"#FFD700"}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: "#FFD700", letterSpacing: 2, marginBottom: 10 }}>TITRE</div>
+      {/* ── TITRE ── */}
+      <NeonCard glow={"#FFD700"} pad="0">
+        <button onClick={function() { setShowTitle(!showTitle); }}
+          style={{ width: "100%", padding: "12px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", background: "transparent", border: "none" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: 14 }}>🏷️</span>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#FFD700", letterSpacing: 2, fontFamily: FD }}>TITRE</span>
+            {me.title && <span style={{ fontSize: 9, color: TD, fontStyle: "italic" }}>{(TITLES.find(function(t) { return t.id === me.title; }) || {}).name || ""}</span>}
+          </div>
+          <span style={{ fontSize: 10, color: "#FFD700", transform: showTitle ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>
+        </button>
+        {showTitle && (
+          <div style={{ padding: "0 14px 14px" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               {availT.map(function(t) {
                 var isActive = me.title === t.id;
@@ -1657,9 +1765,9 @@ function ProfilePage(props) {
                 <div style={{ fontSize: 9, color: TD, marginTop: 4, fontStyle: "italic" }}>🔒 {TITLES.filter(function(t) { return t.req && availT.indexOf(t) === -1; }).length} titres a debloquer via les succes</div>
               )}
             </div>
-          </NeonCard>
-        </div>
-      )}
+          </div>
+        )}
+      </NeonCard>
     </div>
   );
 }
