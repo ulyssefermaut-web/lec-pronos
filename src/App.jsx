@@ -27,11 +27,11 @@ var TI = {
   "SK Gaming": { s: "SK", c: "#0088cc", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdKjXicEX8L3YkfFpXZuIiAdNMpDjxwU22Mw&s" },
   "Heretics": { s: "TH", c: "#ff4655", logo: "https://upload.wikimedia.org/wikipedia/fr/thumb/6/69/Team_Heretics.png/960px-Team_Heretics.png" },
   "NaVi": { s: "NAVI", c: "#ffd700", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRpbImGrO5A3aACm3w56cembiByHoklvHzhQ&s" },
-  "GIANTX": { s: "GX", c: "#00c8ff", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/0/0e/GiantX_logo.svg/330px-GiantX_logo.svg.png" },
-  "Fnatic": { s: "FNC", c: "#ff5900", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/4/43/Esports_organization_Fnatic_logo.svg/300px-Esports_organization_Fnatic_logo.svg.png" },
+  "GIANTX": { s: "GX", c: "#00c8ff", logo: "http://static.lolesports.com/teams/1702900835610_GIANTX_LOGO_COLOR.png" },
+  "Fnatic": { s: "FNC", c: "#ff5900", logo: "http://static.lolesports.com/teams/1631819669150_fnc-2021-worlds.png" },
   "Shifters": { s: "SHFT", c: "#6c5ce7", logo: "https://am-a.akamaihd.net/image?resize=400:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1765897071435_600px-Shifters_allmode.png" },
-  "Vitality": { s: "VIT", c: "#fee800", logo: "https://upload.wikimedia.org/wikipedia/en/thumb/8/86/Team_Vitality_%28esports%29_logo.svg/250px-Team_Vitality_%28esports%29_logo.svg.png" },
-  "KCorp": { s: "KC", c: "#4a90d9", logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Karmine_Corp_logo.svg/250px-Karmine_Corp_logo.svg.png" },
+  "Vitality": { s: "VIT", c: "#fee800", logo: "http://static.lolesports.com/teams/1631819614211_vitality-2021-worlds.png" },
+  "KCorp": { s: "KC", c: "#4a90d9", logo: "http://static.lolesports.com/teams/1704714951336_KC.png" },
   "KOI": { s: "KOI", c: "#00a6ff", logo: "https://am-a.akamaihd.net/image?resize=400:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1734012609283_MKOI_FullColor_Blue.png" },
   "Los Ratones": { s: "LR", c: "#c87533", logo: "https://upload.wikimedia.org/wikipedia/en/4/41/Los_Ratones_logo.png" },
 };
@@ -446,6 +446,15 @@ function TeamLogo(props) {
       {info.s}
     </div>
   );
+}
+
+/* Helper: display emoji or SVG avatar inline at given size */
+function MiniAvatar(props) {
+  var player = props.player; var sz = props.size || 14;
+  if (player.emoji && player.emoji.indexOf("svg_") === 0) {
+    return <span style={{ display: "inline-block", width: sz, height: sz, verticalAlign: "middle" }}><PlayerAvatar player={Object.assign({}, player, { ornament: "none" })} size={sz} rankInfo={null} /></span>;
+  }
+  return <span style={{ fontSize: sz }}>{player.emoji}</span>;
 }
 
 function NeonCard(props) {
@@ -1096,7 +1105,7 @@ function MatchCard(props) {
             var pt = calcPts(m, pr); var ok = pt > 0; var pf = pr.score === m.score && ok;
             return (
               <div key={p.name} style={{ flex: 1, borderRadius: 10, padding: "6px 2px", textAlign: "center", background: pf ? "#FFD70008" : ok ? NG + "08" : N3 + "06", border: "1px solid " + (pf ? "#FFD70025" : ok ? NG + "18" : N3 + "15") }}>
-                <div style={{ fontSize: 12, marginBottom: 1 }}>{p.emoji}</div>
+                <div style={{ fontSize: 12, marginBottom: 1 }}><MiniAvatar player={p} size={14} /></div>
                 <div style={{ fontSize: 9, fontWeight: 600, color: p.color }}>{p.name}</div>
                 <div style={{ fontSize: 9, color: TD }}>{pr.winner || "-"}</div>
                 <div style={{ fontSize: 9, color: TD }}>{pr.score || ""}</div>
@@ -1321,7 +1330,7 @@ function Dashboard(props) {
             return (
               <div key={ws.name} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 0", borderBottom: i < weeklyBest.length - 1 ? "1px solid " + BD : "none" }}>
                 <span style={{ fontFamily: FD, fontWeight: 800, fontSize: 13, width: 18, color: i === 0 ? "#FFD700" : TD }}>{i + 1}</span>
-                <span style={{ fontSize: 14 }}>{ws.emoji}</span>
+                <span style={{ fontSize: 14 }}><MiniAvatar player={ws} size={16} /></span>
                 <div style={{ flex: 1 }}>
                   <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, color: ws.color }}>{ws.name}</span>
                   <span style={{ fontSize: 9, color: TD, marginLeft: 6 }}>{ws.wins}/{ws.total} wins{ws.perfects > 0 ? " - " + ws.perfects + "★" : ""}</span>
@@ -1339,7 +1348,7 @@ function Dashboard(props) {
             var streak = getStreak(s.name);
             return (
               <div key={s.name} style={{ flex: 1, background: S1, border: "1px solid " + BD, borderRadius: 10, padding: "8px 4px", textAlign: "center" }}>
-                <span style={{ fontSize: 14 }}>{s.emoji}</span>
+                <span style={{ fontSize: 14 }}><MiniAvatar player={s} size={16} /></span>
                 <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 10, color: s.color, marginTop: 2 }}>{s.name}</div>
                 <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 18, color: streak >= 3 ? NG : TP, marginTop: 2 }}>{streak}</div>
                 <div style={{ fontSize: 7, color: TD, letterSpacing: 1 }}>SERIE</div>
@@ -1383,7 +1392,7 @@ function Dashboard(props) {
             return (
               <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: i < feed.length - 1 ? "1px solid " + BD : "none" }}>
                 <span style={{ fontSize: 12, width: 18, textAlign: "center" }}>{f.emoji}</span>
-                <span style={{ fontSize: 12 }}>{f.p.emoji}</span>
+                <span style={{ fontSize: 12 }}><MiniAvatar player={f.p} size={14} /></span>
                 <div style={{ flex: 1, fontSize: 10 }}>
                   <span style={{ fontWeight: 700, color: f.p.color }}>{f.p.name}</span>
                   <span style={{ color: TD }}> {f.mt}</span>
@@ -1558,7 +1567,7 @@ function StatsPage(props) {
         return (
           <NeonCard key={p.name} glow={p.color} pad="12px">
             <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
-              <span style={{ fontSize: 16 }}>{p.emoji}</span>
+              <span style={{ fontSize: 16 }}><MiniAvatar player={p} size={18} /></span>
               <div><div style={{ fontFamily: FD, fontWeight: 700, color: p.color, fontSize: 13 }}>{p.name}</div><RankBadge rank={r.rank} /></div>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, fontSize: 10 }}>
