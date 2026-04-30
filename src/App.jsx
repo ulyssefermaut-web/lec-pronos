@@ -1576,8 +1576,6 @@ function ProfilePage(props) {
       {activeSec === "custom" && (
         <ProfileCustomCollapsible me={me} pi={pi} r={r} onUp={onUp} onToggle={onToggle} previewOn={previewOn} availAv={availAv} availOrn={availOrn} availCS={availCS} availT={availT} allIds={allIds} />
       )}
-        </div>
-      )}
     </div>
   );
 }
