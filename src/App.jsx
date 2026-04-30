@@ -23,17 +23,17 @@ var CSS_ANIM = "@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}@keyframes sl
 
 /* ═══ TEAMS ═══ */
 var TI = {
-  "G2 Esports": { s: "G2", c: "#aaa", logo: "https://am-a.akamaihd.net/image?resize=400:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2FG2-FullonDark.png" },
-  "SK Gaming": { s: "SK", c: "#0088cc", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSdKjXicEX8L3YkfFpXZuIiAdNMpDjxwU22Mw&s" },
-  "Heretics": { s: "TH", c: "#ff4655", logo: "https://upload.wikimedia.org/wikipedia/fr/thumb/6/69/Team_Heretics.png/960px-Team_Heretics.png" },
-  "NaVi": { s: "NAVI", c: "#ffd700", logo: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQRpbImGrO5A3aACm3w56cembiByHoklvHzhQ&s" },
-  "GIANTX": { s: "GX", c: "#00c8ff", logo: "http://static.lolesports.com/teams/1702900835610_GIANTX_LOGO_COLOR.png" },
+  "G2 Esports": { s: "G2", c: "#00f0ff", logo: "http://static.lolesports.com/teams/G2-FullonDark.png" },
+  "SK Gaming": { s: "SK", c: "#0088cc", logo: "http://static.lolesports.com/teams/1643979272144_SK_Monochrome.png" },
+  "Heretics": { s: "TH", c: "#ff4655", logo: "http://static.lolesports.com/teams/1672933861879_Heretics-Full-Color.png" },
+  "NaVi": { s: "NAVI", c: "#ffd700", logo: "http://static.lolesports.com/teams/1752746833620_NAVI_FullColor.png" },
+  "GIANTX": { s: "GX", c: "#00c8ff", logo: "http://static.lolesports.com/teams/1765897105091_GIANTX-logotype-white.png" },
   "Fnatic": { s: "FNC", c: "#ff5900", logo: "http://static.lolesports.com/teams/1631819669150_fnc-2021-worlds.png" },
-  "Shifters": { s: "SHFT", c: "#6c5ce7", logo: "https://am-a.akamaihd.net/image?resize=400:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1765897071435_600px-Shifters_allmode.png" },
-  "Vitality": { s: "VIT", c: "#fee800", logo: "http://static.lolesports.com/teams/1631819614211_vitality-2021-worlds.png" },
+  "Shifters": { s: "SHFT", c: "#6c5ce7", logo: "http://static.lolesports.com/teams/1765897071435_600px-Shifters_allmode.png" },
+  "Vitality": { s: "VIT", c: "#fee800", logo: "http://static.lolesports.com/teams/1675865863968_Vitality_FullColor.png" },
   "KCorp": { s: "KC", c: "#4a90d9", logo: "http://static.lolesports.com/teams/1704714951336_KC.png" },
-  "KOI": { s: "KOI", c: "#00a6ff", logo: "https://am-a.akamaihd.net/image?resize=400:&f=http%3A%2F%2Fstatic.lolesports.com%2Fteams%2F1734012609283_MKOI_FullColor_Blue.png" },
-  "Los Ratones": { s: "LR", c: "#c87533", logo: "https://upload.wikimedia.org/wikipedia/en/4/41/Los_Ratones_logo.png" },
+  "KOI": { s: "KOI", c: "#00a6ff", logo: "http://static.lolesports.com/teams/1734012609283_MKOI_FullColor_Blue.png" },
+  "Los Ratones": { s: "LR", c: "#c87533", logo: "http://static.lolesports.com/teams/1736206905390_LR1.png" },
 };
 
 /* ═══ PLAYERS ═══ */
