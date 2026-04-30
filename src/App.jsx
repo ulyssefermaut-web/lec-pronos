@@ -74,12 +74,12 @@ var ORNAMENTS = [
 
 /* Color name styles */
 var CSTYLES = [
-  { id: "solid", name: "Classique", req: null },
-  { id: "neon", name: "Neon", req: "rank_gold1", grad: "linear-gradient(90deg, #00f0ff, #a855f7)" },
-  { id: "fire", name: "Flamme", req: "rank_plat1", grad: "linear-gradient(90deg, #f97316, #ef4444, #dc2626)" },
-  { id: "gold", name: "Or", req: "rank_master1", grad: "linear-gradient(90deg, #fbbf24, #f59e0b, #eab308)" },
-  { id: "rainbow", name: "Arc-en-ciel", req: "upsets_25", grad: "linear-gradient(90deg, #f43f5e, #f97316, #eab308, #10b981, #3b82f6, #a855f7)" },
-  { id: "void", name: "Void", req: "rank_chall1", grad: "linear-gradient(90deg, #6366f1, #a855f7, #ec4899, #a855f7, #6366f1)" },
+  { id: "solid", name: "Classique", req: null, effect: "none" },
+  { id: "neon", name: "Neon", req: "rank_gold1", effect: "neon" },
+  { id: "fire", name: "Flamme", req: "rank_plat1", effect: "fire" },
+  { id: "gold", name: "Or", req: "rank_master1", effect: "gold" },
+  { id: "rainbow", name: "Arc-en-ciel", req: "upsets_25", effect: "rainbow" },
+  { id: "void", name: "Void", req: "rank_chall1", effect: "void" },
 ];
 var SC3 = ["2-0","2-1","0-2","1-2"];
 var SC5 = ["3-0","3-1","3-2","0-3","1-3","2-3"];
@@ -943,16 +943,35 @@ function PlayerAvatar(props) {
   );
 }
 
+/* Build gradient from player color + effect type */
+function buildNameGrad(color, effect) {
+  if (!effect || effect === "none") return null;
+  /* Parse hex to lighten/shift */
+  var r = parseInt(color.slice(1,3), 16);
+  var g = parseInt(color.slice(3,5), 16);
+  var b = parseInt(color.slice(5,7), 16);
+  var lighter = "rgb(" + Math.min(r+80,255) + "," + Math.min(g+80,255) + "," + Math.min(b+80,255) + ")";
+  var whiter = "rgb(" + Math.min(r+140,255) + "," + Math.min(g+140,255) + "," + Math.min(b+140,255) + ")";
+
+  if (effect === "neon") return "linear-gradient(90deg, " + color + ", " + whiter + ", " + color + ")";
+  if (effect === "fire") return "linear-gradient(90deg, " + color + ", " + lighter + ", #ff6b00, " + color + ")";
+  if (effect === "gold") return "linear-gradient(90deg, #fbbf24, " + color + ", #fbbf24, " + color + ", #fbbf24)";
+  if (effect === "rainbow") return "linear-gradient(90deg, #f43f5e, #f97316, #eab308, #10b981, #3b82f6, #a855f7)";
+  if (effect === "void") return "linear-gradient(90deg, " + color + ", #a855f7, #ec4899, #a855f7, " + color + ")";
+  return null;
+}
+
 /* Player name with color style */
 function PlayerName(props) {
   var player = props.player;
   var sz = props.size || 13;
   var cs = CSTYLES.find(function(c) { return c.id === player.cstyle; }) || CSTYLES[0];
-  if (!cs.grad) {
+  var grad = buildNameGrad(player.color, cs.effect);
+  if (!grad) {
     return <span style={{ fontFamily: FD, fontWeight: 700, fontSize: sz, color: player.color }}>{player.name}</span>;
   }
   return (
-    <span style={{ fontFamily: FD, fontWeight: 700, fontSize: sz, background: cs.grad, backgroundSize: "200% 100%", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
+    <span style={{ fontFamily: FD, fontWeight: 700, fontSize: sz, background: grad, backgroundSize: "200% 100%", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
       {player.name}
     </span>
   );
@@ -1716,17 +1735,45 @@ function ProfileCustomCollapsible(props) {
   var availT = props.availT; var allIds = props.allIds;
 
   var s1 = useState(""); var openSec = s1[0]; var setOpenSec = s1[1];
-  function toggle(id) { setOpenSec(openSec === id ? "" : id); }
+  function toggleSec(id) { setOpenSec(openSec === id ? "" : id); }
 
-  /* Accent */
+  /* Local preview overrides - purely visual, never saved */
+  var pvo = useState(null); var pvOver = pvo[0]; var setPvOver = pvo[1];
+
+  /* Display player = real + preview overrides on top */
+  var dp = previewOn && pvOver ? Object.assign({}, me, pvOver) : me;
+
+  /* Toggle preview: when turning off, clear overrides */
+  function doToggle() {
+    if (previewOn) setPvOver(null);
+    onToggle();
+  }
+
+  /* Smart update: locked items go to local preview only, unlocked save to Supabase */
+  function su(field, value, isLocked) {
+    if (isLocked && previewOn) {
+      var ov = Object.assign({}, pvOver || {});
+      ov[field] = value;
+      setPvOver(ov);
+    } else if (!isLocked) {
+      var up = Object.assign({}, me);
+      up[field] = value;
+      onUp(pi, up);
+      if (pvOver) {
+        var cl = Object.assign({}, pvOver);
+        delete cl[field];
+        setPvOver(Object.keys(cl).length > 0 ? cl : null);
+      }
+    }
+  }
+
   var AC = N1;
 
-  /* Shared section header */
   function Sec(p2) {
     var open = openSec === p2.id;
     return (
       <div style={{ marginBottom: 2 }}>
-        <button onClick={function() { toggle(p2.id); }}
+        <button onClick={function() { toggleSec(p2.id); }}
           style={{ width: "100%", padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", background: open ? AC + "06" : "transparent", border: "none", borderRadius: open ? "10px 10px 0 0" : 10, transition: "all 0.15s" }}>
           <div style={{ width: 26, height: 26, borderRadius: 7, background: AC + "10", border: "1px solid " + AC + "20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>{p2.icon}</div>
           <div style={{ flex: 1, textAlign: "left" }}>
@@ -1744,7 +1791,6 @@ function ProfileCustomCollapsible(props) {
     );
   }
 
-  /* Shared grid item - square format, used for emojis, colors, avatars */
   function GridItem(p2) {
     var active = p2.active; var locked = p2.locked; var preview = p2.preview;
     var canUse = !locked || preview;
@@ -1757,7 +1803,6 @@ function ProfileCustomCollapsible(props) {
     );
   }
 
-  /* Shared list item - horizontal row format, used for styles, ornaments, titles */
   function ListItem(p2) {
     var active = p2.active; var locked = p2.locked; var preview = p2.preview;
     var canUse = !locked || preview;
@@ -1774,16 +1819,14 @@ function ProfileCustomCollapsible(props) {
     );
   }
 
-  /* Sub label */
   function SL(p2) {
     return <div style={{ fontSize: 8, fontWeight: 700, color: TD, letterSpacing: 2, marginBottom: 5, marginTop: p2.mt ? 12 : 0 }}>{p2.children}</div>;
   }
 
-  /* Current values for sub labels */
-  var curTitle = me.title ? (TITLES.find(function(t) { return t.id === me.title; }) || {}).name || "" : "Aucun";
-  var curOrn = ORNAMENTS.find(function(o) { return o.id === me.ornament; });
+  var curTitle = dp.title ? (TITLES.find(function(t) { return t.id === dp.title; }) || {}).name || "" : "Aucun";
+  var curOrn = ORNAMENTS.find(function(o) { return o.id === dp.ornament; });
   var curOrnName = curOrn ? curOrn.name : "Aucun";
-  var curCS = CSTYLES.find(function(c) { return c.id === me.cstyle; });
+  var curCS = CSTYLES.find(function(c) { return c.id === dp.cstyle; });
   var curCSName = curCS ? curCS.name : "Classique";
 
   return (
@@ -1791,28 +1834,31 @@ function ProfileCustomCollapsible(props) {
       {/* ── LIVE PREVIEW ── */}
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px 0 14px", gap: 6 }}>
         <div style={{ position: "relative" }}>
-          <PlayerAvatar player={me} size={88} rankInfo={r} />
+          <PlayerAvatar player={dp} size={88} rankInfo={r} />
           {previewOn && <div style={{ position: "absolute", top: -4, right: -4, width: 14, height: 14, borderRadius: "50%", background: N2, border: "2px solid " + S1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7 }}>👁</div>}
         </div>
-        <PlayerName player={me} size={15} />
-        {me.title && <TitleTag titleId={me.title} />}
+        <PlayerName player={dp} size={15} />
+        {dp.title && <TitleTag titleId={dp.title} />}
         <RankBadge rank={r.rank} />
-        <button onClick={function() { onToggle(); }}
+        <button onClick={function() { doToggle(); }}
           style={{ marginTop: 4, padding: "4px 14px", borderRadius: 20, border: "1px solid " + (previewOn ? N2 + "50" : BD), background: previewOn ? N2 + "10" : "transparent", fontSize: 8, fontWeight: 700, color: previewOn ? N2 : TD, cursor: "pointer", fontFamily: FD, letterSpacing: 1, transition: "all 0.15s" }}>
-          {previewOn ? "✓ PREVIEW ACTIF" : "TOUT DEBLOQUER"}
+          {previewOn ? "✓ PREVIEW ACTIF" : "PREVISUALISER TOUT"}
         </button>
+        {previewOn && pvOver && Object.keys(pvOver).length > 0 && (
+          <div style={{ fontSize: 8, color: N2, fontStyle: "italic" }}>Modifications non sauvegardees (preview uniquement)</div>
+        )}
       </div>
 
       {/* ── SECTIONS ── */}
       <div style={{ background: S1, borderRadius: 14, border: "1px solid " + AC + "10", overflow: "hidden" }}>
 
         {/* AVATAR */}
-        <Sec id="avatar" icon="🎭" label="AVATAR" sub={me.emoji.indexOf("svg_") === 0 ? "Avatar exclusif" : "Emoji"}>
+        <Sec id="avatar" icon="🎭" label="AVATAR" sub={dp.emoji.indexOf("svg_") === 0 ? "Avatar exclusif" : "Emoji"}>
           <SL>EMOJIS</SL>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
             {AVATARS.map(function(em) {
               return (
-                <GridItem key={em} active={me.emoji === em} onClick={function() { onUp(pi, Object.assign({}, me, { emoji: em })); }}>
+                <GridItem key={em} active={dp.emoji === em} onClick={function() { su("emoji", em, false); }}>
                   <span style={{ fontSize: 17 }}>{em}</span>
                 </GridItem>
               );
@@ -1824,10 +1870,10 @@ function ProfileCustomCollapsible(props) {
               var unlocked = allIds.indexOf(ea.req) !== -1;
               var isPrev = previewOn && !unlocked;
               return (
-                <GridItem key={ea.id} w={54} h={54} active={me.emoji === ea.id} locked={!unlocked} preview={isPrev}
-                  onClick={function() { onUp(pi, Object.assign({}, me, { emoji: ea.id })); }}>
-                  <div style={{ width: 30, height: 30 }}><PlayerAvatar player={Object.assign({}, me, { emoji: ea.id, ornament: "none" })} size={30} rankInfo={null} /></div>
-                  <span style={{ fontSize: 6, fontWeight: 700, color: me.emoji === ea.id ? AC : TD, fontFamily: FD }}>{ea.name}</span>
+                <GridItem key={ea.id} w={54} h={54} active={dp.emoji === ea.id} locked={!unlocked} preview={isPrev}
+                  onClick={function() { su("emoji", ea.id, !unlocked); }}>
+                  <div style={{ width: 30, height: 30 }}><PlayerAvatar player={Object.assign({}, dp, { emoji: ea.id, ornament: "none" })} size={30} rankInfo={null} /></div>
+                  <span style={{ fontSize: 6, fontWeight: 700, color: dp.emoji === ea.id ? AC : TD, fontFamily: FD }}>{ea.name}</span>
                 </GridItem>
               );
             })}
@@ -1837,13 +1883,13 @@ function ProfileCustomCollapsible(props) {
         <div style={{ height: 1, background: BD }} />
 
         {/* APPARENCE */}
-        <Sec id="look" icon="🎨" label="APPARENCE" sub={curCSName + " - " + me.color}>
+        <Sec id="look" icon="🎨" label="APPARENCE" sub={curCSName}>
           <SL>COULEUR</SL>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
             {PCOLORS.map(function(co) {
-              var active = me.color === co;
+              var active = dp.color === co;
               return (
-                <GridItem key={co} w={34} h={34} active={active} onClick={function() { onUp(pi, Object.assign({}, me, { color: co })); }}>
+                <GridItem key={co} w={34} h={34} active={active} onClick={function() { su("color", co, false); }}>
                   <div style={{ width: 20, height: 20, borderRadius: 6, background: co, boxShadow: active ? "0 0 8px " + co : "none" }} />
                 </GridItem>
               );
@@ -1853,10 +1899,12 @@ function ProfileCustomCollapsible(props) {
           <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {CSTYLES.map(function(cs) {
               var avail = availCS.indexOf(cs) !== -1;
-              var active = me.cstyle === cs.id;
+              var active = dp.cstyle === cs.id;
+              var isPrev = previewOn && !avail;
+              var styleGrad = buildNameGrad(dp.color, cs.effect);
               return (
-                <ListItem key={cs.id} active={active} locked={!avail} onClick={function() { onUp(pi, Object.assign({}, me, { cstyle: cs.id })); }}>
-                  <div style={{ width: 32, height: 10, borderRadius: 3, background: cs.grad || me.color, flexShrink: 0 }} />
+                <ListItem key={cs.id} active={active} locked={!avail} preview={isPrev} onClick={function() { su("cstyle", cs.id, !avail); }}>
+                  <div style={{ width: 32, height: 10, borderRadius: 3, background: styleGrad || dp.color, flexShrink: 0 }} />
                   <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 10, color: TP }}>{cs.name}</span>
                 </ListItem>
               );
@@ -1872,10 +1920,10 @@ function ProfileCustomCollapsible(props) {
           <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {ORNAMENTS.filter(function(o) { return o.style !== "special"; }).map(function(o) {
               var avail = availOrn.indexOf(o) !== -1;
-              var active = me.ornament === o.id;
+              var active = dp.ornament === o.id;
               var isPrev = previewOn && !avail;
               return (
-                <ListItem key={o.id} active={active} locked={!avail} preview={isPrev} onClick={function() { onUp(pi, Object.assign({}, me, { ornament: o.id })); }}>
+                <ListItem key={o.id} active={active} locked={!avail} preview={isPrev} onClick={function() { su("ornament", o.id, !avail); }}>
                   <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid " + (o.color || BD), background: (o.color || "transparent") + "15", flexShrink: 0 }} />
                   <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 10, color: TP }}>{o.name}</span>
                 </ListItem>
@@ -1886,10 +1934,10 @@ function ProfileCustomCollapsible(props) {
           <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {ORNAMENTS.filter(function(o) { return o.style === "special"; }).map(function(o) {
               var avail = availOrn.indexOf(o) !== -1;
-              var active = me.ornament === o.id;
+              var active = dp.ornament === o.id;
               var isPrev = previewOn && !avail;
               return (
-                <ListItem key={o.id} active={active} locked={!avail} preview={isPrev} onClick={function() { onUp(pi, Object.assign({}, me, { ornament: o.id })); }}>
+                <ListItem key={o.id} active={active} locked={!avail} preview={isPrev} onClick={function() { su("ornament", o.id, !avail); }}>
                   <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (o.color || BD), background: (o.color || "transparent") + "15", boxShadow: "0 0 6px " + (o.color || BD) + "30", flexShrink: 0 }} />
                   <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 10, color: TP }}>{o.name}</span>
                 </ListItem>
@@ -1904,9 +1952,9 @@ function ProfileCustomCollapsible(props) {
         <Sec id="title" icon="🏆" label="TITRE" sub={curTitle}>
           <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
             {availT.map(function(t) {
-              var active = me.title === t.id;
+              var active = dp.title === t.id;
               return (
-                <ListItem key={t.id || "none"} active={active} onClick={function() { onUp(pi, Object.assign({}, me, { title: t.id })); }}>
+                <ListItem key={t.id || "none"} active={active} onClick={function() { su("title", t.id, false); }}>
                   <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 10, color: TP }}>{t.name}</span>
                 </ListItem>
               );
