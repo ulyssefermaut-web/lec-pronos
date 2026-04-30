@@ -1578,27 +1578,437 @@ function MatchesPage(props) {
 /* ═══ STATS PAGE ═══ */
 function StatsPage(props) {
   var matches = props.matches; var players = props.players; var spoil = props.spoil;
+  var revealed = matches.filter(function(m) { return m.revealed !== false; });
+  var stv = useState("chart"); var statsView = stv[0]; var setStatsView = stv[1];
+  var sp = useState(null); var selPlayer = sp[0]; var setSelPlayer = sp[1];
+  var cp = useState(null); var compPlayer = cp[0]; var setCompPlayer = cp[1];
+
   if (spoil) return <div style={{ textAlign: "center", padding: "60px 20px" }}><div style={{ fontSize: 48 }}>🔒</div><div style={{ fontFamily: FD, fontSize: 16, fontWeight: 700, color: N1, marginTop: 8 }}>Anti-spoil actif</div></div>;
+
+  /* Build cumulative points per week per player */
+  var weeks = [];
+  revealed.forEach(function(m) { if (m.winner && m.week && weeks.indexOf(m.week) === -1) weeks.push(m.week); });
+  weeks.sort(function(a, b) { return a - b; });
+
+  var curves = players.map(function(p) {
+    var cum = 0;
+    var pts = [{ w: 0, v: 0 }];
+    weeks.forEach(function(wk) {
+      var wm = revealed.filter(function(m) { return m.week === wk && m.winner; });
+      wm.forEach(function(m) {
+        var pr = m.preds[p.name];
+        if (pr && pr.winner) cum = cum + calcPts(m, pr);
+      });
+      pts.push({ w: wk, v: rd(cum) });
+    });
+    return { name: p.name, color: p.color, pts: pts };
+  });
+
+  var maxVal = 1;
+  curves.forEach(function(c) { c.pts.forEach(function(p) { if (p.v > maxVal) maxVal = p.v; }); });
+
+  /* Weekly stats per player */
+  function getWeeklyStats(pname) {
+    return weeks.map(function(wk) {
+      var wm = revealed.filter(function(m) { return m.week === wk && m.winner; });
+      var pts = 0; var wins = 0; var perfects = 0; var total = 0;
+      wm.forEach(function(m) {
+        var pr = m.preds[pname]; if (!pr || !pr.winner) return;
+        total++;
+        var pt = calcPts(m, pr);
+        if (pt > 0) { pts += pt; wins++; }
+        if (pt > 0 && pr.score === m.score) perfects++;
+      });
+      return { week: wk, pts: rd(pts), wins: wins, perfects: perfects, total: total };
+    });
+  }
+
+  /* Team winrate for a player */
+  function getTeamWR(pname) {
+    var teams = {};
+    revealed.forEach(function(m) {
+      if (!m.winner || !m.preds[pname] || !m.preds[pname].winner) return;
+      [m.team1, m.team2].forEach(function(t) {
+        if (!teams[t]) teams[t] = { w: 0, l: 0 };
+      });
+      var pr = m.preds[pname];
+      var won = pr.winner === m.winner;
+      /* Which team was predicted to win */
+      if (won) {
+        teams[m.winner].w++;
+      } else {
+        teams[pr.winner].l++;
+      }
+    });
+    var arr = Object.keys(teams).map(function(t) {
+      var d = teams[t]; var total = d.w + d.l;
+      return { team: t, wins: d.w, total: total, wr: total > 0 ? Math.round(d.w / total * 100) : 0 };
+    }).filter(function(t) { return t.total > 0; });
+    arr.sort(function(a, b) { return b.wr - a.wr; });
+    return arr;
+  }
+
+  /* Head to head comparison */
+  function getH2H(p1, p2) {
+    var p1better = 0; var p2better = 0; var ties = 0;
+    revealed.forEach(function(m) {
+      if (!m.winner) return;
+      var pr1 = m.preds[p1]; var pr2 = m.preds[p2];
+      if (!pr1 || !pr1.winner || !pr2 || !pr2.winner) return;
+      var pt1 = calcPts(m, pr1); var pt2 = calcPts(m, pr2);
+      if (pt1 > pt2) p1better++;
+      else if (pt2 > pt1) p2better++;
+      else ties++;
+    });
+    return { p1: p1better, p2: p2better, ties: ties };
+  }
+
+  /* Nav tabs */
+  var tabs = [
+    { id: "chart", label: "Evolution" },
+    { id: "players", label: "Joueurs" },
+    { id: "h2h", label: "Duel" },
+  ];
+
+  /* SVG Chart dimensions */
+  var cW = 340; var cH = 180; var pad = 30;
+  var gW = cW - pad * 2; var gH = cH - pad * 2;
+
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-      {players.map(function(p) {
-        var s = getStats(matches, p.name); var xp = getTotalXP(s); var r = getRank(xp); var ul = getUnlocked(s);
-        return (
-          <NeonCard key={p.name} glow={p.color} pad="12px">
-            <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
-              <span style={{ fontSize: 16 }}><MiniAvatar player={p} size={18} /></span>
-              <div><div style={{ fontFamily: FD, fontWeight: 700, color: p.color, fontSize: 13 }}>{p.name}</div><RankBadge rank={r.rank} /></div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
+      {/* Tab nav */}
+      <div style={{ display: "flex", gap: 0, borderBottom: "1px solid " + BD }}>
+        {tabs.map(function(t) {
+          return <button key={t.id} onClick={function() { setStatsView(t.id); }}
+            style={{ background: "transparent", border: "none", borderBottom: statsView === t.id ? "2px solid " + N1 : "2px solid transparent", color: statsView === t.id ? N1 : TD, padding: "8px 14px", fontSize: 10, fontWeight: 700, cursor: "pointer", fontFamily: FD, letterSpacing: 1 }}>{t.label}</button>;
+        })}
+      </div>
+
+      {/* ── EVOLUTION CHART ── */}
+      {statsView === "chart" && (
+        <div>
+          <NeonCard glow={N1}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: N1, letterSpacing: 3, marginBottom: 10 }}>EVOLUTION DES POINTS</div>
+            <svg viewBox={"0 0 " + cW + " " + cH} style={{ width: "100%", height: "auto" }}>
+              {/* Grid lines */}
+              {[0, 0.25, 0.5, 0.75, 1].map(function(f, i) {
+                var y = pad + gH - gH * f;
+                return <g key={i}>
+                  <line x1={pad} y1={y} x2={pad + gW} y2={y} stroke={BD} strokeWidth="0.5" />
+                  <text x={pad - 4} y={y + 3} fill={TD} fontSize="7" textAnchor="end" fontFamily="DM Sans">{Math.round(maxVal * f)}</text>
+                </g>;
+              })}
+              {/* Week labels */}
+              {weeks.map(function(wk, i) {
+                var x = pad + (i + 1) / weeks.length * gW;
+                return <text key={wk} x={x} y={cH - 5} fill={TD} fontSize="7" textAnchor="middle" fontFamily="DM Sans">W{wk}</text>;
+              })}
+              {/* Player curves */}
+              {curves.map(function(c) {
+                var points = c.pts.map(function(p, i) {
+                  var x = pad + i / (c.pts.length - 1) * gW;
+                  var y = pad + gH - (p.v / maxVal) * gH;
+                  return x + "," + y;
+                }).join(" ");
+                return <g key={c.name}>
+                  <polyline points={points} fill="none" stroke={c.color} strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" opacity="0.8" />
+                  {c.pts.map(function(p, i) {
+                    if (i === 0) return null;
+                    var x = pad + i / (c.pts.length - 1) * gW;
+                    var y = pad + gH - (p.v / maxVal) * gH;
+                    return <circle key={i} cx={x} cy={y} r="3" fill={c.color} stroke={S1} strokeWidth="1" />;
+                  })}
+                </g>;
+              })}
+            </svg>
+            {/* Legend */}
+            <div style={{ display: "flex", justifyContent: "center", gap: 12, marginTop: 6 }}>
+              {curves.map(function(c) {
+                var last = c.pts[c.pts.length - 1];
+                return (
+                  <div key={c.name} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: "50%", background: c.color }} />
+                    <span style={{ fontSize: 9, fontWeight: 700, color: c.color, fontFamily: FD }}>{c.name}</span>
+                    <span style={{ fontSize: 8, color: TD }}>{last.v}</span>
+                  </div>
+                );
+              })}
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, fontSize: 10 }}>
-              <div><span style={{ color: TD }}>Winrate</span><br /><span style={{ fontWeight: 700 }}>{s.wr}%</span></div>
-              <div><span style={{ color: TD }}>Moy</span><br /><span style={{ fontWeight: 700 }}>{s.played > 0 ? (s.total / s.played).toFixed(1) : "0"}</span></div>
-              <div><span style={{ color: TD }}>Parfaits</span><br /><span style={{ fontWeight: 700, color: "#FFD700" }}>{s.perfects}</span></div>
-              <div><span style={{ color: TD }}>Total</span><br /><span style={{ fontWeight: 700, color: NG }}>{s.total}</span></div>
-            </div>
-            <div style={{ fontSize: 9, color: TD, marginTop: 4 }}>{ul.length}/{ACHS.length} succes - {xp} XP</div>
           </NeonCard>
-        );
-      })}
+
+          {/* Weekly breakdown */}
+          <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: TD, letterSpacing: 3, marginBottom: 8 }}>SEMAINE PAR SEMAINE</div>
+            {weeks.slice().reverse().map(function(wk) {
+              var weekPlayers = players.map(function(p) {
+                var wm = revealed.filter(function(m) { return m.week === wk && m.winner; });
+                var pts = 0; var wins = 0; var pf = 0;
+                wm.forEach(function(m) {
+                  var pr = m.preds[p.name]; if (!pr || !pr.winner) return;
+                  var pt = calcPts(m, pr);
+                  if (pt > 0) { pts += pt; wins++; }
+                  if (pt > 0 && pr.score === m.score) pf++;
+                });
+                return { name: p.name, color: p.color, pts: rd(pts), wins: wins, pf: pf };
+              }).sort(function(a, b) { return b.pts - a.pts; });
+              return (
+                <div key={wk} style={{ background: S1, border: "1px solid " + BD, borderRadius: 10, padding: "8px 12px", marginBottom: 6 }}>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: N1, letterSpacing: 2, marginBottom: 6 }}>SEMAINE {wk}</div>
+                  <div style={{ display: "flex", gap: 4 }}>
+                    {weekPlayers.map(function(wp, i) {
+                      return (
+                        <div key={wp.name} style={{ flex: 1, textAlign: "center", padding: "4px 0", borderRadius: 6, background: i === 0 ? "#FFD700" + "10" : "transparent" }}>
+                          <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 14, color: wp.color }}>{wp.pts}</div>
+                          <div style={{ fontSize: 8, fontWeight: 700, color: wp.color }}>{wp.name}</div>
+                          <div style={{ fontSize: 7, color: TD }}>{wp.wins}W {wp.pf > 0 ? wp.pf + "★" : ""}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── PLAYER DETAIL ── */}
+      {statsView === "players" && (
+        <div>
+          {/* Player selector */}
+          <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
+            {players.map(function(p) {
+              var active = selPlayer === p.name;
+              return (
+                <button key={p.name} onClick={function() { setSelPlayer(active ? null : p.name); }}
+                  style={{ flex: 1, padding: "8px 4px", borderRadius: 10, border: active ? "2px solid " + p.color : "1px solid " + BD, background: active ? p.color + "12" : S1, cursor: "pointer", textAlign: "center" }}>
+                  <MiniAvatar player={p} size={20} />
+                  <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 9, color: active ? p.color : TD, marginTop: 2 }}>{p.name}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {!selPlayer && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              {players.map(function(p) {
+                var s = getStats(revealed, p.name); var xp = getTotalXP(s); var r2 = getRank(xp); var ul = getUnlocked(s);
+                return (
+                  <NeonCard key={p.name} glow={p.color} pad="12px">
+                    <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
+                      <MiniAvatar player={p} size={18} />
+                      <div><div style={{ fontFamily: FD, fontWeight: 700, color: p.color, fontSize: 13 }}>{p.name}</div><RankBadge rank={r2.rank} /></div>
+                    </div>
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 4, fontSize: 10 }}>
+                      <div><span style={{ color: TD }}>Winrate</span><br /><span style={{ fontWeight: 700 }}>{s.wr}%</span></div>
+                      <div><span style={{ color: TD }}>Moy</span><br /><span style={{ fontWeight: 700 }}>{s.played > 0 ? (s.total / s.played).toFixed(1) : "0"}</span></div>
+                      <div><span style={{ color: TD }}>Parfaits</span><br /><span style={{ fontWeight: 700, color: "#FFD700" }}>{s.perfects}</span></div>
+                      <div><span style={{ color: TD }}>Total</span><br /><span style={{ fontWeight: 700, color: NG }}>{s.total}</span></div>
+                    </div>
+                    <div style={{ fontSize: 9, color: TD, marginTop: 4 }}>{ul.length}/{ACHS.length} succes</div>
+                  </NeonCard>
+                );
+              })}
+            </div>
+          )}
+
+          {selPlayer && (
+            <div>
+              {/* Detailed player stats */}
+              {(function() {
+                var p = players.find(function(pl) { return pl.name === selPlayer; });
+                var s = getStats(revealed, selPlayer);
+                var xp = getTotalXP(s); var r2 = getRank(xp);
+                var twr = getTeamWR(selPlayer);
+                var wkStats = getWeeklyStats(selPlayer);
+                var bestW = wkStats.slice().sort(function(a, b) { return b.pts - a.pts; })[0];
+                var worstW = wkStats.slice().sort(function(a, b) { return a.pts - b.pts; })[0];
+
+                return (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {/* Header */}
+                    <NeonCard glow={p.color}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <PlayerAvatar player={p} size={50} rankInfo={r2} />
+                        <div style={{ flex: 1 }}>
+                          <PlayerName player={p} size={16} />
+                          <div style={{ marginTop: 2 }}><RankBadge rank={r2.rank} /></div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 22, color: TP }}>{s.total}</div>
+                          <div style={{ fontSize: 9, color: TD }}>WR {s.wr}% | {s.perfects}★</div>
+                        </div>
+                      </div>
+                    </NeonCard>
+
+                    {/* Key stats */}
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+                      {[
+                        { l: "Matchs", v: s.played, c: TP },
+                        { l: "Victoires", v: s.wins, c: NG },
+                        { l: "Parfaits", v: s.perfects, c: "#FFD700" },
+                        { l: "Upsets", v: s.upsets, c: N2 },
+                        { l: "Max serie", v: s.maxStreak, c: N1 },
+                        { l: "Moy/match", v: s.played > 0 ? (s.total / s.played).toFixed(1) : "0", c: TP },
+                      ].map(function(st) {
+                        return (
+                          <div key={st.l} style={{ background: S1, border: "1px solid " + BD, borderRadius: 8, padding: "8px 6px", textAlign: "center" }}>
+                            <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 16, color: st.c }}>{st.v}</div>
+                            <div style={{ fontSize: 7, color: TD, letterSpacing: 1 }}>{st.l.toUpperCase()}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Best/Worst week */}
+                    {bestW && (
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <div style={{ flex: 1, background: S1, border: "1px solid " + NG + "20", borderRadius: 8, padding: "8px 10px" }}>
+                          <div style={{ fontSize: 8, color: NG, fontWeight: 700, letterSpacing: 1 }}>MEILLEURE SEMAINE</div>
+                          <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 14, color: TP }}>W{bestW.week} - {bestW.pts} pts</div>
+                          <div style={{ fontSize: 8, color: TD }}>{bestW.wins}/{bestW.total} wins</div>
+                        </div>
+                        <div style={{ flex: 1, background: S1, border: "1px solid " + N3 + "20", borderRadius: 8, padding: "8px 10px" }}>
+                          <div style={{ fontSize: 8, color: N3, fontWeight: 700, letterSpacing: 1 }}>PIRE SEMAINE</div>
+                          <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 14, color: TP }}>W{worstW.week} - {worstW.pts} pts</div>
+                          <div style={{ fontSize: 8, color: TD }}>{worstW.wins}/{worstW.total} wins</div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Team winrate */}
+                    <NeonCard glow={p.color} pad="12px">
+                      <div style={{ fontSize: 9, fontWeight: 700, color: p.color, letterSpacing: 2, marginBottom: 8 }}>WINRATE PAR EQUIPE</div>
+                      {twr.slice(0, 6).map(function(tw) {
+                        return (
+                          <div key={tw.team} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                            <TeamLogo team={tw.team} size={18} />
+                            <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 10, flex: 1 }}>{tw.team}</span>
+                            <div style={{ width: 60, height: 5, borderRadius: 3, background: BD, overflow: "hidden" }}>
+                              <div style={{ height: "100%", borderRadius: 3, background: tw.wr >= 70 ? NG : tw.wr >= 50 ? N1 : N3, width: tw.wr + "%" }} />
+                            </div>
+                            <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 10, color: tw.wr >= 70 ? NG : tw.wr >= 50 ? TP : N3, width: 32, textAlign: "right" }}>{tw.wr}%</span>
+                            <span style={{ fontSize: 8, color: TD }}>{tw.wins}/{tw.total}</span>
+                          </div>
+                        );
+                      })}
+                    </NeonCard>
+
+                    {/* Match history */}
+                    <NeonCard glow={TD} pad="12px">
+                      <div style={{ fontSize: 9, fontWeight: 700, color: TD, letterSpacing: 2, marginBottom: 8 }}>HISTORIQUE</div>
+                      {revealed.slice().reverse().filter(function(m) { return m.winner && m.preds[selPlayer] && m.preds[selPlayer].winner; }).slice(0, 12).map(function(m) {
+                        var pr = m.preds[selPlayer];
+                        var pt = calcPts(m, pr);
+                        var pf = pt > 0 && pr.score === m.score;
+                        var won = pt > 0;
+                        return (
+                          <div key={m.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 0", borderBottom: "1px solid " + BD }}>
+                            <span style={{ fontSize: 10, width: 14, textAlign: "center" }}>{pf ? "★" : won ? "✓" : "✗"}</span>
+                            <TeamLogo team={m.team1} size={14} />
+                            <span style={{ fontSize: 9, flex: 1 }}>{m.team1} vs {m.team2}</span>
+                            <span style={{ fontSize: 8, color: TD }}>W{m.week}</span>
+                            <span style={{ fontSize: 8, color: TD }}>{pr.winner} {pr.score}</span>
+                            <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 10, color: won ? (pf ? "#FFD700" : NG) : N3, width: 28, textAlign: "right" }}>{pt > 0 ? "+" + rd(pt) : "0"}</span>
+                          </div>
+                        );
+                      })}
+                    </NeonCard>
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── HEAD TO HEAD ── */}
+      {statsView === "h2h" && (
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: N1, letterSpacing: 3, marginBottom: 10 }}>CHOISIR 2 JOUEURS</div>
+          <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+            {players.map(function(p) {
+              var is1 = compPlayer === p.name;
+              var is2 = cp[0] && cp[0] !== p.name && selPlayer === p.name;
+              return (
+                <button key={p.name} onClick={function() {
+                  if (!compPlayer) { setCompPlayer(p.name); }
+                  else if (compPlayer === p.name) { setCompPlayer(null); }
+                  else { setSelPlayer(p.name); }
+                }}
+                  style={{ flex: 1, padding: "10px 4px", borderRadius: 10, border: (compPlayer === p.name || selPlayer === p.name) ? "2px solid " + p.color : "1px solid " + BD, background: (compPlayer === p.name || selPlayer === p.name) ? p.color + "12" : S1, cursor: "pointer", textAlign: "center" }}>
+                  <MiniAvatar player={p} size={22} />
+                  <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 9, color: (compPlayer === p.name || selPlayer === p.name) ? p.color : TD, marginTop: 2 }}>{p.name}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {compPlayer && selPlayer && compPlayer !== selPlayer && (function() {
+            var p1 = players.find(function(p) { return p.name === compPlayer; });
+            var p2 = players.find(function(p) { return p.name === selPlayer; });
+            var s1p = getStats(revealed, compPlayer);
+            var s2p = getStats(revealed, selPlayer);
+            var h2h = getH2H(compPlayer, selPlayer);
+
+            return (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {/* Score bar */}
+                <NeonCard glow={N1}>
+                  <div style={{ textAlign: "center", marginBottom: 10 }}>
+                    <div style={{ fontSize: 9, color: TD, letterSpacing: 2, fontWeight: 700 }}>CONFRONTATION DIRECTE</div>
+                  </div>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ flex: 1, textAlign: "center" }}>
+                      <MiniAvatar player={p1} size={28} />
+                      <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, color: p1.color, marginTop: 4 }}>{p1.name}</div>
+                    </div>
+                    <div style={{ textAlign: "center" }}>
+                      <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 28, color: TP }}>{h2h.p1} - {h2h.p2}</div>
+                      <div style={{ fontSize: 8, color: TD }}>{h2h.ties} egalite(s)</div>
+                    </div>
+                    <div style={{ flex: 1, textAlign: "center" }}>
+                      <MiniAvatar player={p2} size={28} />
+                      <div style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, color: p2.color, marginTop: 4 }}>{p2.name}</div>
+                    </div>
+                  </div>
+                  {/* H2H bar */}
+                  <div style={{ display: "flex", height: 8, borderRadius: 4, overflow: "hidden", marginTop: 10 }}>
+                    <div style={{ width: (h2h.p1 + h2h.p2 > 0 ? h2h.p1 / (h2h.p1 + h2h.p2) * 100 : 50) + "%", background: p1.color, transition: "width 0.3s" }} />
+                    <div style={{ flex: 1, background: p2.color }} />
+                  </div>
+                </NeonCard>
+
+                {/* Stat comparison */}
+                <NeonCard glow={TD} pad="12px">
+                  {[
+                    { l: "Points", v1: s1p.total, v2: s2p.total },
+                    { l: "Winrate", v1: s1p.wr + "%", v2: s2p.wr + "%" },
+                    { l: "Victoires", v1: s1p.wins, v2: s2p.wins },
+                    { l: "Parfaits", v1: s1p.perfects, v2: s2p.perfects },
+                    { l: "Upsets", v1: s1p.upsets, v2: s2p.upsets },
+                    { l: "Max serie", v1: s1p.maxStreak, v2: s2p.maxStreak },
+                  ].map(function(row) {
+                    var n1 = parseFloat(row.v1); var n2 = parseFloat(row.v2);
+                    return (
+                      <div key={row.l} style={{ display: "flex", alignItems: "center", padding: "6px 0", borderBottom: "1px solid " + BD }}>
+                        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 12, color: n1 > n2 ? p1.color : n1 === n2 ? TP : TD, flex: 1, textAlign: "center" }}>{row.v1}</span>
+                        <span style={{ fontSize: 9, color: TD, fontWeight: 600, width: 70, textAlign: "center" }}>{row.l}</span>
+                        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 12, color: n2 > n1 ? p2.color : n2 === n1 ? TP : TD, flex: 1, textAlign: "center" }}>{row.v2}</span>
+                      </div>
+                    );
+                  })}
+                </NeonCard>
+              </div>
+            );
+          })()}
+
+          {(!compPlayer || !selPlayer || compPlayer === selPlayer) && (
+            <div style={{ textAlign: "center", padding: 30, color: TD, fontSize: 10 }}>Selectionne 2 joueurs differents pour comparer</div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
