@@ -1715,56 +1715,71 @@ function ProfileCustomCollapsible(props) {
   var availAv = props.availAv; var availOrn = props.availOrn; var availCS = props.availCS;
   var availT = props.availT; var allIds = props.allIds;
 
-  var s1 = useState(false); var showAvatar = s1[0]; var setShowAvatar = s1[1];
-  var s2 = useState(false); var showColor = s2[0]; var setShowColor = s2[1];
-  var s3 = useState(false); var showOrn = s3[0]; var setShowOrn = s3[1];
-  var s4 = useState(false); var showTitle = s4[0]; var setShowTitle = s4[1];
+  var s1 = useState(""); var openSec = s1[0]; var setOpenSec = s1[1];
+  function toggle(id) { setOpenSec(openSec === id ? "" : id); }
 
-  /* Unified accent color for all sections */
+  /* Accent */
   var AC = N1;
 
-  /* Unified section header */
-  function SectionHead(props2) {
-    var open = props2.open; var toggle = props2.toggle; var icon = props2.icon; var label = props2.label; var sub = props2.sub;
+  /* Shared section header */
+  function Sec(p2) {
+    var open = openSec === p2.id;
     return (
-      <button onClick={toggle}
-        style={{ width: "100%", padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", cursor: "pointer", background: open ? AC + "06" : "transparent", border: "none", borderBottom: open ? "1px solid " + AC + "15" : "none", transition: "background 0.2s" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: AC + "12", border: "1px solid " + AC + "25", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13 }}>{icon}</div>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: TP, letterSpacing: 1.5, fontFamily: FD }}>{label}</div>
-            {sub && <div style={{ fontSize: 9, color: TD, marginTop: 1 }}>{sub}</div>}
+      <div style={{ marginBottom: 2 }}>
+        <button onClick={function() { toggle(p2.id); }}
+          style={{ width: "100%", padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", background: open ? AC + "06" : "transparent", border: "none", borderRadius: open ? "10px 10px 0 0" : 10, transition: "all 0.15s" }}>
+          <div style={{ width: 26, height: 26, borderRadius: 7, background: AC + "10", border: "1px solid " + AC + "20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, flexShrink: 0 }}>{p2.icon}</div>
+          <div style={{ flex: 1, textAlign: "left" }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: TP, letterSpacing: 1.5, fontFamily: FD }}>{p2.label}</div>
+            <div style={{ fontSize: 8, color: TD, marginTop: 1 }}>{p2.sub}</div>
           </div>
-        </div>
-        <span style={{ fontSize: 10, color: AC, transform: open ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>
-      </button>
+          <span style={{ fontSize: 8, color: AC, transform: open ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>
+        </button>
+        {open && (
+          <div style={{ padding: "6px 14px 14px", background: AC + "03", borderRadius: "0 0 10px 10px", borderTop: "1px solid " + AC + "10" }}>
+            {p2.children}
+          </div>
+        )}
+      </div>
     );
   }
 
-  /* Unified item button */
-  function ItemBtn(props2) {
-    var active = props2.active; var avail = props2.avail !== false; var preview = props2.preview;
-    var onClick = props2.onClick; var children = props2.children;
-    var canUse = avail || preview;
+  /* Shared grid item - square format, used for emojis, colors, avatars */
+  function GridItem(p2) {
+    var active = p2.active; var locked = p2.locked; var preview = p2.preview;
+    var canUse = !locked || preview;
     return (
-      <button disabled={!canUse} onClick={function() { if (canUse && onClick) onClick(); }}
-        style={{ padding: "8px 12px", borderRadius: 10, border: active ? "2px solid " + AC : preview ? "1px dashed " + N2 + "50" : "1px solid " + BD, background: active ? AC + "10" : preview ? N2 + "05" : S2, cursor: canUse ? "pointer" : "not-allowed", textAlign: "left", display: "flex", alignItems: "center", gap: 10, opacity: canUse ? 1 : 0.35, width: "100%", transition: "all 0.15s" }}>
-        {children}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4 }}>
-          {active && <span style={{ fontSize: 8, padding: "2px 6px", borderRadius: 4, background: AC + "18", color: AC, fontWeight: 700, letterSpacing: 1 }}>ACTIF</span>}
-          {!avail && !preview && <span style={{ fontSize: 9 }}>🔒</span>}
-          {preview && <span style={{ fontSize: 8, padding: "2px 6px", borderRadius: 4, background: N2 + "15", color: N2, fontWeight: 600, fontStyle: "italic" }}>PREVIEW</span>}
+      <button disabled={!canUse} onClick={function() { if (canUse && p2.onClick) p2.onClick(); }}
+        style={{ width: p2.w || 40, height: p2.h || 40, borderRadius: 8, border: active ? "2px solid " + AC : preview ? "1px dashed " + N2 + "40" : "1px solid " + BD, background: active ? AC + "12" : S2, cursor: canUse ? "pointer" : "not-allowed", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2, opacity: canUse ? 1 : 0.3, transition: "all 0.12s", position: "relative", overflow: "hidden" }}>
+        {p2.children}
+        {active && <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 2, background: AC }} />}
+      </button>
+    );
+  }
+
+  /* Shared list item - horizontal row format, used for styles, ornaments, titles */
+  function ListItem(p2) {
+    var active = p2.active; var locked = p2.locked; var preview = p2.preview;
+    var canUse = !locked || preview;
+    return (
+      <button disabled={!canUse} onClick={function() { if (canUse && p2.onClick) p2.onClick(); }}
+        style={{ width: "100%", padding: "9px 12px", borderRadius: 8, border: active ? "1px solid " + AC + "50" : "1px solid " + BD, background: active ? AC + "08" : "transparent", cursor: canUse ? "pointer" : "not-allowed", textAlign: "left", display: "flex", alignItems: "center", gap: 10, opacity: canUse ? 1 : 0.3, transition: "all 0.12s" }}>
+        {p2.children}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center" }}>
+          {active && <div style={{ width: 6, height: 6, borderRadius: "50%", background: AC, boxShadow: "0 0 6px " + AC }} />}
+          {locked && !preview && <span style={{ fontSize: 8, color: TD }}>🔒</span>}
+          {preview && <span style={{ fontSize: 7, padding: "1px 4px", borderRadius: 3, background: N2 + "12", color: N2, fontWeight: 600 }}>PREV</span>}
         </div>
       </button>
     );
   }
 
-  /* Sub-section label */
-  function SubLabel(props2) {
-    return <div style={{ fontSize: 9, fontWeight: 700, color: TD, letterSpacing: 2, marginBottom: 6, marginTop: props2.mt ? 14 : 0 }}>{props2.children}</div>;
+  /* Sub label */
+  function SL(p2) {
+    return <div style={{ fontSize: 8, fontWeight: 700, color: TD, letterSpacing: 2, marginBottom: 5, marginTop: p2.mt ? 12 : 0 }}>{p2.children}</div>;
   }
 
-  /* Current active title name */
+  /* Current values for sub labels */
   var curTitle = me.title ? (TITLES.find(function(t) { return t.id === me.title; }) || {}).name || "" : "Aucun";
   var curOrn = ORNAMENTS.find(function(o) { return o.id === me.ornament; });
   var curOrnName = curOrn ? curOrn.name : "Aucun";
@@ -1772,155 +1787,135 @@ function ProfileCustomCollapsible(props) {
   var curCSName = curCS ? curCS.name : "Classique";
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-
-      {/* Preview global + Avatar preview */}
-      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "16px 0 8px", gap: 8 }}>
-        <PlayerAvatar player={me} size={80} rankInfo={r} />
-        <PlayerName player={me} size={14} />
+    <div>
+      {/* ── LIVE PREVIEW ── */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "20px 0 14px", gap: 6 }}>
+        <div style={{ position: "relative" }}>
+          <PlayerAvatar player={me} size={88} rankInfo={r} />
+          {previewOn && <div style={{ position: "absolute", top: -4, right: -4, width: 14, height: 14, borderRadius: "50%", background: N2, border: "2px solid " + S1, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 7 }}>👁</div>}
+        </div>
+        <PlayerName player={me} size={15} />
         {me.title && <TitleTag titleId={me.title} />}
+        <RankBadge rank={r.rank} />
         <button onClick={function() { onToggle(); }}
-          style={{ padding: "4px 12px", borderRadius: 6, border: "1px solid " + (previewOn ? N2 : BD), background: previewOn ? N2 + "18" : S2, fontSize: 9, fontWeight: 700, color: previewOn ? N2 : TD, cursor: "pointer", fontFamily: FD, letterSpacing: 1 }}>
-          {previewOn ? "✓ Preview actif" : "Tout debloquer (preview)"}
+          style={{ marginTop: 4, padding: "4px 14px", borderRadius: 20, border: "1px solid " + (previewOn ? N2 + "50" : BD), background: previewOn ? N2 + "10" : "transparent", fontSize: 8, fontWeight: 700, color: previewOn ? N2 : TD, cursor: "pointer", fontFamily: FD, letterSpacing: 1, transition: "all 0.15s" }}>
+          {previewOn ? "✓ PREVIEW ACTIF" : "TOUT DEBLOQUER"}
         </button>
       </div>
 
-      {/* ── AVATAR ── */}
-      <div style={{ background: S1, borderRadius: 14, border: "1px solid " + AC + "15", overflow: "hidden" }}>
-        <SectionHead open={showAvatar} toggle={function() { setShowAvatar(!showAvatar); }} icon="🎭" label="AVATAR" sub={me.emoji.indexOf("svg_") === 0 ? "Avatar exclusif" : "Emoji"} />
-        {showAvatar && (
-          <div style={{ padding: "12px 16px 16px" }}>
-            <SubLabel>EMOJIS CLASSIQUES</SubLabel>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 4 }}>
-              {AVATARS.map(function(em) {
-                var active = me.emoji === em;
-                return (
-                  <button key={em} onClick={function() { onUp(pi, Object.assign({}, me, { emoji: em })); }}
-                    style={{ width: 38, height: 38, borderRadius: 10, border: active ? "2px solid " + AC : "1px solid " + BD, background: active ? AC + "12" : S2, fontSize: 18, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "all 0.15s" }}>
-                    {em}
-                  </button>
-                );
-              })}
-            </div>
-            <SubLabel mt={true}>AVATARS EXCLUSIFS</SubLabel>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-              {EX_AVATARS.map(function(ea) {
-                var isAvail = allIds.indexOf(ea.req) !== -1 || previewOn;
-                var isActive = me.emoji === ea.id;
-                var isPrev = previewOn && allIds.indexOf(ea.req) === -1;
-                return (
-                  <button key={ea.id} disabled={!isAvail}
-                    onClick={function() { if (isAvail) onUp(pi, Object.assign({}, me, { emoji: ea.id })); }}
-                    style={{ width: 56, padding: "6px 2px", borderRadius: 10, border: isActive ? "2px solid " + AC : isPrev ? "1px dashed " + N2 + "50" : isAvail ? "1px solid " + BD : "1px solid " + BD, background: isActive ? AC + "12" : isPrev ? N2 + "05" : S2, cursor: isAvail ? "pointer" : "not-allowed", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, opacity: isAvail ? 1 : 0.3, transition: "all 0.15s" }}>
-                    <div style={{ width: 32, height: 32 }}>
-                      <PlayerAvatar player={Object.assign({}, me, { emoji: ea.id, ornament: "none" })} size={32} rankInfo={null} />
-                    </div>
-                    <span style={{ fontSize: 7, fontWeight: 700, color: isActive ? AC : TP, fontFamily: FD }}>{ea.name}</span>
-                    {!isAvail && !isPrev && <span style={{ fontSize: 7 }}>🔒</span>}
-                    {isPrev && <span style={{ fontSize: 6, color: N2, fontWeight: 600 }}>PREVIEW</span>}
-                  </button>
-                );
-              })}
-            </div>
-            {!previewOn && EX_AVATARS.filter(function(ea) { return allIds.indexOf(ea.req) === -1; }).length > 0 && (
-              <div style={{ fontSize: 9, color: TD, marginTop: 10, fontStyle: "italic", textAlign: "center" }}>🔒 {EX_AVATARS.filter(function(ea) { return allIds.indexOf(ea.req) === -1; }).length} avatars exclusifs a debloquer</div>
-            )}
-          </div>
-        )}
-      </div>
+      {/* ── SECTIONS ── */}
+      <div style={{ background: S1, borderRadius: 14, border: "1px solid " + AC + "10", overflow: "hidden" }}>
 
-      {/* ── COULEUR & STYLE ── */}
-      <div style={{ background: S1, borderRadius: 14, border: "1px solid " + AC + "15", overflow: "hidden" }}>
-        <SectionHead open={showColor} toggle={function() { setShowColor(!showColor); }} icon="🎨" label="APPARENCE" sub={curCSName} />
-        {showColor && (
-          <div style={{ padding: "12px 16px 16px" }}>
-            <SubLabel>COULEUR DE BASE</SubLabel>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 4 }}>
-              {PCOLORS.map(function(co) {
-                var active = me.color === co;
-                return <button key={co} onClick={function() { onUp(pi, Object.assign({}, me, { color: co })); }}
-                  style={{ width: 32, height: 32, borderRadius: 10, border: active ? "3px solid #fff" : "2px solid " + co + "40", background: co, cursor: "pointer", boxShadow: active ? "0 0 12px " + co + "60" : "none", transition: "all 0.15s" }} />;
-              })}
-            </div>
-            <SubLabel mt={true}>STYLE DU NOM</SubLabel>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {CSTYLES.map(function(cs) {
-                var avail = availCS.indexOf(cs) !== -1;
-                var active = me.cstyle === cs.id;
-                return (
-                  <ItemBtn key={cs.id} active={active} avail={avail} preview={false} onClick={function() { onUp(pi, Object.assign({}, me, { cstyle: cs.id })); }}>
-                    <div style={{ width: 36, height: 14, borderRadius: 4, background: cs.grad || me.color, flexShrink: 0 }} />
-                    <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 11, color: active ? AC : TP }}>{cs.name}</span>
-                    {cs.req && <span style={{ fontSize: 7, color: TD, marginLeft: 4 }}>{cs.req}</span>}
-                  </ItemBtn>
-                );
-              })}
-            </div>
+        {/* AVATAR */}
+        <Sec id="avatar" icon="🎭" label="AVATAR" sub={me.emoji.indexOf("svg_") === 0 ? "Avatar exclusif" : "Emoji"}>
+          <SL>EMOJIS</SL>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+            {AVATARS.map(function(em) {
+              return (
+                <GridItem key={em} active={me.emoji === em} onClick={function() { onUp(pi, Object.assign({}, me, { emoji: em })); }}>
+                  <span style={{ fontSize: 17 }}>{em}</span>
+                </GridItem>
+              );
+            })}
           </div>
-        )}
-      </div>
+          <SL mt={true}>EXCLUSIFS</SL>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {EX_AVATARS.map(function(ea) {
+              var unlocked = allIds.indexOf(ea.req) !== -1;
+              var isPrev = previewOn && !unlocked;
+              return (
+                <GridItem key={ea.id} w={54} h={54} active={me.emoji === ea.id} locked={!unlocked} preview={isPrev}
+                  onClick={function() { onUp(pi, Object.assign({}, me, { emoji: ea.id })); }}>
+                  <div style={{ width: 30, height: 30 }}><PlayerAvatar player={Object.assign({}, me, { emoji: ea.id, ornament: "none" })} size={30} rankInfo={null} /></div>
+                  <span style={{ fontSize: 6, fontWeight: 700, color: me.emoji === ea.id ? AC : TD, fontFamily: FD }}>{ea.name}</span>
+                </GridItem>
+              );
+            })}
+          </div>
+        </Sec>
 
-      {/* ── ORNEMENT ── */}
-      <div style={{ background: S1, borderRadius: 14, border: "1px solid " + AC + "15", overflow: "hidden" }}>
-        <SectionHead open={showOrn} toggle={function() { setShowOrn(!showOrn); }} icon="💠" label="ORNEMENT" sub={curOrnName} />
-        {showOrn && (
-          <div style={{ padding: "12px 16px 16px" }}>
-            <SubLabel>ORNEMENTS DE RANG</SubLabel>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 4 }}>
-              {ORNAMENTS.filter(function(o) { return o.style !== "special"; }).map(function(o) {
-                var avail = availOrn.indexOf(o) !== -1;
-                var active = me.ornament === o.id;
-                var isPrev = previewOn && !avail;
-                return (
-                  <ItemBtn key={o.id} active={active} avail={avail} preview={isPrev} onClick={function() { onUp(pi, Object.assign({}, me, { ornament: o.id })); }}>
-                    {o.color ? <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid " + o.color, background: o.color + "15", flexShrink: 0 }} /> : <div style={{ width: 22, height: 22, borderRadius: "50%", border: "2px solid " + BD, background: S2, flexShrink: 0 }} />}
-                    <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 11, color: active ? AC : TP }}>{o.name}</span>
-                  </ItemBtn>
-                );
-              })}
-            </div>
-            <SubLabel mt={true}>ORNEMENTS SPECIAUX</SubLabel>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {ORNAMENTS.filter(function(o) { return o.style === "special"; }).map(function(o) {
-                var avail = availOrn.indexOf(o) !== -1;
-                var active = me.ornament === o.id;
-                var isPrev = previewOn && !avail;
-                return (
-                  <ItemBtn key={o.id} active={active} avail={avail} preview={isPrev} onClick={function() { onUp(pi, Object.assign({}, me, { ornament: o.id })); }}>
-                    <div style={{ width: 22, height: 22, borderRadius: 6, border: "2px solid " + (o.color || BD), background: (o.color || BD) + "15", boxShadow: "0 0 8px " + (o.color || BD) + "40", flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 11, color: active ? AC : TP }}>{o.name}</span>
-                      <span style={{ fontSize: 7, color: o.color, marginLeft: 6, fontWeight: 700, letterSpacing: 1 }}>SPECIAL</span>
-                    </div>
-                  </ItemBtn>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
+        <div style={{ height: 1, background: BD }} />
 
-      {/* ── TITRE ── */}
-      <div style={{ background: S1, borderRadius: 14, border: "1px solid " + AC + "15", overflow: "hidden" }}>
-        <SectionHead open={showTitle} toggle={function() { setShowTitle(!showTitle); }} icon="🏆" label="TITRE" sub={curTitle} />
-        {showTitle && (
-          <div style={{ padding: "12px 16px 16px" }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {availT.map(function(t) {
-                var isActive = me.title === t.id;
-                return (
-                  <ItemBtn key={t.id || "none"} active={isActive} avail={true} preview={false} onClick={function() { onUp(pi, Object.assign({}, me, { title: t.id })); }}>
-                    <span style={{ fontSize: 12, width: 22, textAlign: "center" }}>{isActive ? "🏆" : "🏷️"}</span>
-                    <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 11, color: isActive ? AC : TP }}>{t.name}</span>
-                  </ItemBtn>
-                );
-              })}
-            </div>
-            {TITLES.filter(function(t) { return t.req && availT.indexOf(t) === -1; }).length > 0 && (
-              <div style={{ fontSize: 9, color: TD, marginTop: 10, fontStyle: "italic", textAlign: "center" }}>🔒 {TITLES.filter(function(t) { return t.req && availT.indexOf(t) === -1; }).length} titres a debloquer via les succes</div>
-            )}
+        {/* APPARENCE */}
+        <Sec id="look" icon="🎨" label="APPARENCE" sub={curCSName + " - " + me.color}>
+          <SL>COULEUR</SL>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+            {PCOLORS.map(function(co) {
+              var active = me.color === co;
+              return (
+                <GridItem key={co} w={34} h={34} active={active} onClick={function() { onUp(pi, Object.assign({}, me, { color: co })); }}>
+                  <div style={{ width: 20, height: 20, borderRadius: 6, background: co, boxShadow: active ? "0 0 8px " + co : "none" }} />
+                </GridItem>
+              );
+            })}
           </div>
-        )}
+          <SL mt={true}>STYLE DU NOM</SL>
+          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {CSTYLES.map(function(cs) {
+              var avail = availCS.indexOf(cs) !== -1;
+              var active = me.cstyle === cs.id;
+              return (
+                <ListItem key={cs.id} active={active} locked={!avail} onClick={function() { onUp(pi, Object.assign({}, me, { cstyle: cs.id })); }}>
+                  <div style={{ width: 32, height: 10, borderRadius: 3, background: cs.grad || me.color, flexShrink: 0 }} />
+                  <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 10, color: TP }}>{cs.name}</span>
+                </ListItem>
+              );
+            })}
+          </div>
+        </Sec>
+
+        <div style={{ height: 1, background: BD }} />
+
+        {/* ORNEMENT */}
+        <Sec id="orn" icon="💠" label="ORNEMENT" sub={curOrnName}>
+          <SL>RANG</SL>
+          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {ORNAMENTS.filter(function(o) { return o.style !== "special"; }).map(function(o) {
+              var avail = availOrn.indexOf(o) !== -1;
+              var active = me.ornament === o.id;
+              var isPrev = previewOn && !avail;
+              return (
+                <ListItem key={o.id} active={active} locked={!avail} preview={isPrev} onClick={function() { onUp(pi, Object.assign({}, me, { ornament: o.id })); }}>
+                  <div style={{ width: 18, height: 18, borderRadius: "50%", border: "2px solid " + (o.color || BD), background: (o.color || "transparent") + "15", flexShrink: 0 }} />
+                  <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 10, color: TP }}>{o.name}</span>
+                </ListItem>
+              );
+            })}
+          </div>
+          <SL mt={true}>SPECIAUX</SL>
+          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {ORNAMENTS.filter(function(o) { return o.style === "special"; }).map(function(o) {
+              var avail = availOrn.indexOf(o) !== -1;
+              var active = me.ornament === o.id;
+              var isPrev = previewOn && !avail;
+              return (
+                <ListItem key={o.id} active={active} locked={!avail} preview={isPrev} onClick={function() { onUp(pi, Object.assign({}, me, { ornament: o.id })); }}>
+                  <div style={{ width: 18, height: 18, borderRadius: 4, border: "2px solid " + (o.color || BD), background: (o.color || "transparent") + "15", boxShadow: "0 0 6px " + (o.color || BD) + "30", flexShrink: 0 }} />
+                  <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 10, color: TP }}>{o.name}</span>
+                </ListItem>
+              );
+            })}
+          </div>
+        </Sec>
+
+        <div style={{ height: 1, background: BD }} />
+
+        {/* TITRE */}
+        <Sec id="title" icon="🏆" label="TITRE" sub={curTitle}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {availT.map(function(t) {
+              var active = me.title === t.id;
+              return (
+                <ListItem key={t.id || "none"} active={active} onClick={function() { onUp(pi, Object.assign({}, me, { title: t.id })); }}>
+                  <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 10, color: TP }}>{t.name}</span>
+                </ListItem>
+              );
+            })}
+          </div>
+          {TITLES.filter(function(t) { return t.req && availT.indexOf(t) === -1; }).length > 0 && (
+            <div style={{ fontSize: 8, color: TD, marginTop: 8, fontStyle: "italic", textAlign: "center" }}>🔒 {TITLES.filter(function(t) { return t.req && availT.indexOf(t) === -1; }).length} titres a debloquer</div>
+          )}
+        </Sec>
       </div>
     </div>
   );
