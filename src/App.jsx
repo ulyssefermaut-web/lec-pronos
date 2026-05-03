@@ -417,8 +417,11 @@ function calcPtsWithItem(m, pr, itemDef, allPreds, playerName, weekMatches, allI
       }
       break;
     case "karthus_ult":
-      /* Handled at week level, not match level */
-      effectLabel = "karthus";
+      /* x1.5 on all correct pronos if player finished last this week */
+      if (correct) {
+        bonus = basePts * 0.5; /* will be applied only if isLastInWeek check passes externally */
+        effectLabel = "x1.5 karthus";
+      }
       break;
     case "spirit_link":
       /* Check if linked player also got it right */
@@ -460,6 +463,34 @@ function winOf(t1, t2, sc) {
 }
 
 function rd(n) { return Math.round(n * 10) / 10; }
+
+/* Deterministic hash for Roulette TF - same player+week always picks same match */
+function rouletteMatchIndex(playerName, week, matchCount) {
+  var hash = 0;
+  var str = playerName + "_" + week;
+  for (var i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash = hash & hash;
+  }
+  return Math.abs(hash) % matchCount;
+}
+
+/* Check if player is last in a week (for Karthus) */
+function isLastInWeek(weekMatches, playerName, players) {
+  if (!weekMatches || weekMatches.length === 0) return false;
+  var allDone = weekMatches.every(function(m) { return !!m.winner; });
+  if (!allDone) return false;
+  var scores = players.map(function(p) {
+    var pts = 0;
+    weekMatches.forEach(function(m) {
+      var pr = m.preds[p.name];
+      if (pr) pts += calcPts(m, pr);
+    });
+    return { name: p.name, pts: pts };
+  });
+  scores.sort(function(a, b) { return a.pts - b.pts; });
+  return scores[0].name === playerName;
+}
 
 function getStats(matches, name) {
   var w = 0, pf = 0, tot = 0, pl = 0, streak = 0, maxS = 0, ups = 0;
@@ -1314,6 +1345,17 @@ function MatchCard(props) {
           {myItems.map(function(myIt) {
             var def = getItemById(myIt.item_id);
             if (!def) return null;
+            /* Roulette TF and Karthus are auto-assigned, not manual */
+            if (def.effect === "random_x2") {
+              return <div key={myIt.id} style={{ padding: "4px 8px", borderRadius: 6, background: def.color + "10", border: "1px solid " + def.color + "20", fontSize: 8, color: def.color, fontWeight: 600 }}>{def.icon} Roulette TF - S'active sur un match aleatoire automatiquement</div>;
+            }
+            if (def.effect === "karthus_ult") {
+              return <div key={myIt.id} style={{ padding: "4px 8px", borderRadius: 6, background: def.color + "10", border: "1px solid " + def.color + "20", fontSize: 8, color: def.color, fontWeight: 600 }}>{def.icon} Karthus - S'active automatiquement si tu finis dernier de la semaine</div>;
+            }
+            /* Phage is also auto */
+            if (def.effect === "streak_bonus") {
+              return <div key={myIt.id} style={{ padding: "4px 8px", borderRadius: 6, background: def.color + "10", border: "1px solid " + def.color + "20", fontSize: 8, color: def.color, fontWeight: 600 }}>{def.icon} Phage - S'active automatiquement si 2 corrects de suite</div>;
+            }
             var alreadyAssigned = myIt.assigned_match_id === m.id;
             var assignedElsewhere = myIt.assigned_match_id && myIt.assigned_match_id !== m.id;
             if (assignedElsewhere) return null;
@@ -1356,10 +1398,35 @@ function MatchCard(props) {
           {players.map(function(p) {
             var pr = m.preds[p.name] || {};
             var pt = calcPts(m, pr); var ok = pt > 0; var pf = pr.score === m.score && ok;
-            /* Check if player has an item on this match */
+            /* Check manually assigned item */
             var pItem = assignedItems.find(function(ai) { return ai.assigned_match_id === m.id && ai.player_name === p.name; });
             var pItemDef = pItem ? getItemById(pItem.item_id) : null;
-            var itemResult = pItemDef ? calcPtsWithItem(m, pr, pItemDef, m.preds, p.name, null, assignedItems, players) : null;
+            /* Check auto items for this player */
+            var allIt = props.allItems || [];
+            var weekMs = props.seasonMatches || [];
+            weekMs = weekMs.filter(function(wm) { return wm.week === m.week; });
+            if (!pItemDef) {
+              /* Roulette TF */
+              var rouletteIt = allIt.find(function(ai) { return ai.player_name === p.name && ai.item_id === "tf_roulette" && (ai.status === "pending" || ai.status === "assigned"); });
+              if (rouletteIt && weekMs.length > 0) {
+                var rIdx = rouletteMatchIndex(p.name, m.week, weekMs.length);
+                if (weekMs[rIdx] && weekMs[rIdx].id === m.id) pItemDef = getItemById("tf_roulette");
+              }
+            }
+            if (!pItemDef) {
+              /* Phage */
+              var phageIt = allIt.find(function(ai) { return ai.player_name === p.name && ai.item_id === "phage" && (ai.status === "pending" || ai.status === "assigned"); });
+              if (phageIt) pItemDef = getItemById("phage");
+            }
+            var itemResult = pItemDef ? calcPtsWithItem(m, pr, pItemDef, m.preds, p.name, weekMs, allIt, players) : null;
+            /* Karthus - only if no other item and player is last */
+            if (!pItemDef) {
+              var karthusIt = allIt.find(function(ai) { return ai.player_name === p.name && ai.item_id === "karthus" && (ai.status === "pending" || ai.status === "assigned"); });
+              if (karthusIt && ok && isLastInWeek(weekMs, p.name, players)) {
+                pItemDef = getItemById("karthus");
+                itemResult = calcPtsWithItem(m, pr, pItemDef, m.preds, p.name, weekMs, allIt, players);
+              }
+            }
             var totalPts = itemResult ? itemResult.total : pt;
             var hasBonus = itemResult && itemResult.bonus !== 0;
             return (
@@ -1787,7 +1854,7 @@ function MatchListGrouped(props) {
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                     {dayMatches.map(function(m) {
-                      return <MatchCard key={m.id} match={m} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={spoil} myItems={myItems} assignedItems={assignedItems} />;
+                      return <MatchCard key={m.id} match={m} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={spoil} myItems={myItems} assignedItems={assignedItems} allItems={props.allItems} seasonMatches={list} />;
                     })}
                   </div>
                 </div>
@@ -1968,20 +2035,20 @@ function MatchesPage(props) {
       {up.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <CollapseHeader open={showUp} onToggle={function() { setShowUp(!showUp); }} color={N1} label="A VENIR" count={up.length} bg={"linear-gradient(90deg, " + N1 + "10, transparent)"} border={N1} />
-          {showUp && <MatchListGrouped matches={up} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} defaultOpenWeek={currentWeek} myItems={myItems} assignedItems={assignedItems} />}
+          {showUp && <MatchListGrouped matches={up} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} defaultOpenWeek={currentWeek} myItems={myItems} assignedItems={assignedItems} allItems={allItems} />}
         </div>
       )}
       {pending.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           <CollapseHeader open={showPend} onToggle={function() { setShowPend(!showPend); }} color={N2} label="EN ATTENTE" icon="⏳ " count={pending.length} bg={"linear-gradient(90deg, " + N2 + "10, transparent)"} border={N2} />
-          {showPend && <MatchListGrouped matches={pending} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} defaultOpenWeek={currentWeek} myItems={myItems} assignedItems={assignedItems} />}
+          {showPend && <MatchListGrouped matches={pending} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={false} defaultOpenWeek={currentWeek} myItems={myItems} assignedItems={assignedItems} allItems={allItems} />}
         </div>
       )}
       {(up.length > 0 || pending.length > 0) && done.length > 0 && <div style={{ height: 1, background: "linear-gradient(90deg, transparent, " + BD + ", transparent)", margin: "0 0 12px" }} />}
       {done.length > 0 && (
         <div>
           <CollapseHeader open={showDone} onToggle={function() { setShowDone(!showDone); }} color={TD} label="TERMINES" count={done.length} bg={S2} border={TD} />
-          {showDone && <MatchListGrouped matches={done} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={spoil} defaultOpenWeek={done[done.length - 1] ? done[done.length - 1].week : null} myItems={myItems} assignedItems={assignedItems} />}
+          {showDone && <MatchListGrouped matches={done} players={players} onUpdate={onUpdate} currentUser={user} isAdmin={isAdmin} spoil={spoil} defaultOpenWeek={done[done.length - 1] ? done[done.length - 1].week : null} myItems={myItems} assignedItems={assignedItems} allItems={allItems} />}
         </div>
       )}
     </div>
@@ -2972,21 +3039,34 @@ export default function App() {
   function handleRollItems(week) {
     var revealed = seasonMatches.filter(function(m) { return m.revealed !== false; });
     var stats = players.map(function(p) { var s = getStats(revealed, p.name); return Object.assign({}, p, s); }).sort(function(a, b) { return b.total - a.total; });
-    var promises = [];
-    stats.forEach(function(p, i) {
-      /* Check if player already has item for this week */
-      var existing = items.find(function(it) { return it.player_name === p.name && it.season_id === activeSeason && it.week === week; });
-      if (existing) return;
-      var rank = i + 1;
-      var item = rollItem(rank);
-      promises.push(supabase.from("items").insert({
-        player_name: p.name, season_id: activeSeason, week: week,
-        item_id: item.id, status: "pending",
-      }));
+
+    /* First: expire all pending/assigned items from previous weeks */
+    var toExpire = items.filter(function(it) {
+      return it.season_id === activeSeason && it.week < week && (it.status === "pending" || it.status === "assigned");
     });
-    if (promises.length > 0) {
-      Promise.all(promises).then(function() { loadData(); });
-    }
+    var expirePromises = toExpire.map(function(it) {
+      return supabase.from("items").update({ status: "expired" }).eq("id", it.id);
+    });
+
+    Promise.all(expirePromises).then(function() {
+      /* Then: roll new items */
+      var rollPromises = [];
+      stats.forEach(function(p, i) {
+        var existing = items.find(function(it) { return it.player_name === p.name && it.season_id === activeSeason && it.week === week; });
+        if (existing) return;
+        var rank = i + 1;
+        var item = rollItem(rank);
+        rollPromises.push(supabase.from("items").insert({
+          player_name: p.name, season_id: activeSeason, week: week,
+          item_id: item.id, status: "pending",
+        }));
+      });
+      if (rollPromises.length > 0) {
+        Promise.all(rollPromises).then(function() { loadData(); });
+      } else {
+        loadData();
+      }
+    });
   }
 
   if (loading) {
