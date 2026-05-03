@@ -1886,68 +1886,76 @@ function MatchesPage(props) {
         </div>
       )}
 
-      {/* Shop panel */}
+      {/* Items panel */}
       <div style={{ marginBottom: 10 }}>
         <button onClick={function() { setShowShop(!showShop); }}
-          style={{ width: "100%", padding: "10px 14px", borderRadius: showShop ? "12px 12px 0 0" : 12, border: "1px solid " + N1 + "25", background: showShop ? N1 + "08" : S1, cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 16 }}>🏪</span>
-          <span style={{ fontSize: 11, fontWeight: 700, color: N1, letterSpacing: 2, fontFamily: FD }}>SHOP</span>
-          <span style={{ fontSize: 8, color: TD, flex: 1 }}>Items et inventaires</span>
-          <span style={{ fontSize: 10, color: N1, transform: showShop ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>
+          style={{ width: "100%", padding: "8px 12px", borderRadius: showShop ? "10px 10px 0 0" : 10, border: "1px solid " + N1 + "25", background: showShop ? N1 + "08" : S1, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
+          <span style={{ fontSize: 13 }}>⚗️</span>
+          <span style={{ fontSize: 10, fontWeight: 700, color: N1, letterSpacing: 2, fontFamily: FD }}>ITEMS</span>
+          {/* Quick preview of all players' items inline */}
+          <div style={{ flex: 1, display: "flex", justifyContent: "flex-end", gap: 3 }}>
+            {players.map(function(p) {
+              var cur = (playerItems[p.name] || []).find(function(it) { return it.status === "pending" || it.status === "assigned"; });
+              var curDef = cur ? getItemById(cur.item_id) : null;
+              return <div key={p.name} style={{ width: 18, height: 18, borderRadius: 4, background: curDef ? curDef.color + "15" : S2, border: "1px solid " + (curDef ? curDef.color + "30" : BD), display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9 }}>{curDef ? curDef.icon : "·"}</div>;
+            })}
+          </div>
+          <span style={{ fontSize: 8, color: N1, transform: showShop ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>
         </button>
         {showShop && (
-          <div style={{ background: S1, borderRadius: "0 0 12px 12px", border: "1px solid " + N1 + "15", borderTop: "none", padding: "12px 14px" }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: N1, letterSpacing: 2, marginBottom: 8 }}>INVENTAIRES</div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4, marginBottom: 14 }}>
+          <div style={{ background: S1, borderRadius: "0 0 10px 10px", border: "1px solid " + N1 + "15", borderTop: "none", padding: "10px 12px" }}>
+            {/* Compact inventories */}
+            <div style={{ display: "flex", gap: 4, marginBottom: 10 }}>
               {players.map(function(p) {
-                var pItems = playerItems[p.name] || [];
-                var cur = pItems.find(function(it) { return it.status === "pending" || it.status === "assigned"; });
+                var cur = (playerItems[p.name] || []).find(function(it) { return it.status === "pending" || it.status === "assigned"; });
                 var curDef = cur ? getItemById(cur.item_id) : null;
                 return (
-                  <div key={p.name} style={{ display: "flex", alignItems: "center", gap: 8, padding: "6px 8px", borderRadius: 6, background: p.name === user ? p.color + "06" : "transparent", border: "1px solid " + (p.name === user ? p.color + "20" : BD) }}>
-                    <MiniAvatar player={p} size={16} />
-                    <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 10, color: p.color, flex: 1 }}>{p.name}</span>
+                  <div key={p.name} style={{ flex: 1, padding: "6px 4px", borderRadius: 8, background: p.name === user ? p.color + "08" : S2, border: "1px solid " + (p.name === user ? p.color + "20" : BD), textAlign: "center" }}>
+                    <div style={{ fontSize: 8, fontWeight: 700, color: p.color, fontFamily: FD }}>{p.name}</div>
                     {curDef ? (
-                      <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-                        <span style={{ fontSize: 11 }}>{curDef.icon}</span>
-                        <span style={{ fontSize: 8, fontWeight: 600, color: curDef.color }}>{curDef.name}</span>
-                        {cur.status === "assigned" && <span style={{ fontSize: 6, padding: "1px 3px", borderRadius: 3, background: NG + "12", color: NG, fontWeight: 700 }}>GO</span>}
+                      <div>
+                        <div style={{ fontSize: 14, marginTop: 2 }}>{curDef.icon}</div>
+                        <div style={{ fontSize: 7, fontWeight: 600, color: curDef.color }}>{curDef.name}</div>
+                        {cur.status === "assigned" && <div style={{ fontSize: 6, color: NG, fontWeight: 700 }}>ASSIGNE</div>}
                       </div>
                     ) : (
-                      <span style={{ fontSize: 8, color: TD }}>-</span>
+                      <div style={{ fontSize: 10, color: TD, marginTop: 4 }}>—</div>
                     )}
                   </div>
                 );
               })}
             </div>
 
-            <div style={{ fontSize: 9, fontWeight: 700, color: N1, letterSpacing: 2, marginBottom: 6 }}>GUIDE DES ITEMS</div>
-            {[{ tier: 1, label: "TIER 1 — COMMON", color: "#6b8cff" }, { tier: 2, label: "TIER 2 — RARE", color: "#a855f7" }, { tier: 3, label: "TIER 3 — LEGENDAIRE", color: "#f97316" }, { tier: 0, label: "BONUS — 10% CHANCE", color: "#ec4899" }].map(function(tg) {
+            {/* Compact item guide - all tiers in a grid */}
+            <div style={{ fontSize: 8, fontWeight: 700, color: TD, letterSpacing: 2, marginBottom: 4 }}>TOUS LES ITEMS</div>
+            {[{ tier: 1, label: "T1", color: "#6b8cff" }, { tier: 2, label: "T2", color: "#a855f7" }, { tier: 3, label: "T3", color: "#f97316" }, { tier: 0, label: "★", color: "#ec4899" }].map(function(tg) {
               return (
-                <div key={tg.tier} style={{ marginBottom: 8 }}>
-                  <div style={{ fontSize: 7, fontWeight: 700, color: tg.color, letterSpacing: 2, marginBottom: 3 }}>{tg.label}</div>
-                  {ITEMS.filter(function(it) { return it.tier === tg.tier; }).map(function(it) {
-                    return (
-                      <div key={it.id} style={{ display: "flex", alignItems: "center", gap: 6, padding: "4px 6px", borderRadius: 5, background: S2, marginBottom: 2 }}>
-                        <span style={{ fontSize: 13, width: 20, textAlign: "center" }}>{it.icon}</span>
-                        <div style={{ flex: 1 }}>
-                          <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 9, color: it.color }}>{it.name}</span>
-                          <span style={{ fontSize: 7, color: TD, marginLeft: 4 }}>{it.desc}</span>
+                <div key={tg.tier} style={{ marginBottom: 4 }}>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                    {ITEMS.filter(function(it) { return it.tier === tg.tier; }).map(function(it) {
+                      return (
+                        <div key={it.id} style={{ display: "flex", alignItems: "center", gap: 4, padding: "3px 6px", borderRadius: 4, background: S2, border: "1px solid " + BD, flex: "1 1 45%", minWidth: 0 }}>
+                          <span style={{ fontSize: 11, flexShrink: 0 }}>{it.icon}</span>
+                          <div style={{ minWidth: 0 }}>
+                            <div style={{ fontSize: 8, fontWeight: 700, color: it.color, fontFamily: FD, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.name}</div>
+                            <div style={{ fontSize: 6, color: TD, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{it.desc}</div>
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               );
             })}
 
-            <div style={{ fontSize: 8, color: TD, marginTop: 6, lineHeight: "14px" }}>
-              <div style={{ fontSize: 7, fontWeight: 700, color: TD, letterSpacing: 2, marginBottom: 3 }}>DISTRIBUTION</div>
-              <div>1er : 80% T1 / 20% T2 | 2e : 50/50</div>
-              <div>3e : 20% T1 / 60% T2 / 20% T3</div>
-              <div>4e : 40% T2 / 60% T3</div>
-              <div style={{ marginTop: 4 }}>1 item/semaine - expire si non utilise</div>
+            {/* Compact rules */}
+            <div style={{ display: "flex", gap: 4, marginTop: 6, fontSize: 7, color: TD }}>
+              <div style={{ flex: 1, padding: "4px 6px", borderRadius: 4, background: S2, textAlign: "center" }}>1er: 80%T1 20%T2</div>
+              <div style={{ flex: 1, padding: "4px 6px", borderRadius: 4, background: S2, textAlign: "center" }}>2e: 50/50</div>
+              <div style={{ flex: 1, padding: "4px 6px", borderRadius: 4, background: S2, textAlign: "center" }}>3e: 20/60/20</div>
+              <div style={{ flex: 1, padding: "4px 6px", borderRadius: 4, background: S2, textAlign: "center" }}>4e: 40T2 60T3</div>
             </div>
+            <div style={{ fontSize: 7, color: TD, textAlign: "center", marginTop: 4 }}>1 item/semaine · expire si non utilise · 10% chance bonus</div>
           </div>
         )}
       </div>
