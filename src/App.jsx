@@ -315,6 +315,144 @@ function calcPts(m, pr) {
   return pr.score === m.score ? c * 2 : c;
 }
 
+/* Calculate points with item effects applied */
+function calcPtsWithItem(m, pr, itemDef, allPreds, playerName, weekMatches, allItems, players) {
+  var basePts = calcPts(m, pr);
+  if (!itemDef) return { pts: basePts, bonus: 0, itemEffect: null };
+
+  var correct = basePts > 0;
+  var perfect = correct && pr && pr.score === m.score;
+  var coteEquipe = pr && pr.winner ? (pr.winner === m.team1 ? m.cote1 : m.cote2) : 0;
+  var coteAdverse = pr && pr.winner ? (pr.winner === m.team1 ? m.cote2 : m.cote1) : 0;
+  var isUpset = coteEquipe >= 2.0;
+  var isUnderdog = coteEquipe >= coteAdverse;
+  var bonus = 0;
+  var effectLabel = null;
+
+  switch (itemDef.effect) {
+    case "flat_bonus":
+      if (correct) { bonus = 0.5; effectLabel = "+0.5"; }
+      break;
+    case "upset_bonus":
+      if (correct && isUpset) { bonus = 1; effectLabel = "+1 upset"; }
+      break;
+    case "streak_bonus":
+      /* Check if previous match in this week was also correct */
+      if (correct && weekMatches) {
+        var myIdx = -1;
+        for (var i = 0; i < weekMatches.length; i++) {
+          if (weekMatches[i].id === m.id) { myIdx = i; break; }
+        }
+        if (myIdx > 0) {
+          var prevM = weekMatches[myIdx - 1];
+          var prevPr = prevM.preds[playerName];
+          if (prevPr && calcPts(prevM, prevPr) > 0) {
+            bonus = 1; effectLabel = "+1 serie";
+          }
+        }
+      }
+      break;
+    case "hide_pred":
+      effectLabel = "cache";
+      break;
+    case "double_score":
+      /* Handled via extra_data - second score check */
+      if (correct && !perfect && pr.score2) {
+        if (pr.score2 === m.score) {
+          bonus = basePts; /* Double the points as if perfect */
+          effectLabel = "parfait x2!";
+        }
+      }
+      break;
+    case "comeback_x2":
+      /* Check if player has 2+ losing streak before this match */
+      if (correct && weekMatches) {
+        var loseStreak = 0;
+        for (var j = 0; j < weekMatches.length; j++) {
+          if (weekMatches[j].id === m.id) break;
+          var pj = weekMatches[j].preds[playerName];
+          if (pj && weekMatches[j].winner) {
+            if (calcPts(weekMatches[j], pj) > 0) loseStreak = 0;
+            else loseStreak++;
+          }
+        }
+        if (loseStreak >= 2) {
+          bonus = basePts; /* x2 total */
+          effectLabel = "x2 comeback";
+        }
+      }
+      break;
+    case "underdog_x2":
+      if (correct && isUnderdog) {
+        bonus = basePts; /* x2 total */
+        effectLabel = "x2 underdog";
+      }
+      break;
+    case "random_x2":
+      /* Applied automatically to a random match - if this is the chosen match */
+      if (correct) {
+        bonus = basePts;
+        effectLabel = "x2 roulette";
+      }
+      break;
+    case "boost_15":
+      if (correct && coteEquipe >= 1.8) {
+        bonus = basePts * 0.5; /* x1.5 total */
+        effectLabel = "x1.5";
+      }
+      break;
+    case "perfect_x2":
+      if (perfect && coteEquipe >= 1.8) {
+        bonus = basePts; /* x2 total */
+        effectLabel = "x2 parfait";
+      }
+      break;
+    case "draven_bet":
+      if (perfect) {
+        bonus = basePts * 2; /* x3 total */
+        effectLabel = "x3 DRAVEN!";
+      } else {
+        bonus = -1;
+        effectLabel = "-1 rate";
+      }
+      break;
+    case "karthus_ult":
+      /* Handled at week level, not match level */
+      effectLabel = "karthus";
+      break;
+    case "spirit_link":
+      /* Check if linked player also got it right */
+      if (correct && allItems) {
+        var linkedItem = allItems.find(function(ai) {
+          return ai.item_id === "spirit_link" && ai.assigned_match_id === m.id && ai.player_name !== playerName;
+        });
+        if (linkedItem) {
+          var linkedPr = m.preds[linkedItem.player_name];
+          if (linkedPr && calcPts(m, linkedPr) > 0) {
+            bonus = 1.5;
+            effectLabel = "+1.5 lien";
+          }
+        }
+      }
+      break;
+    case "smite":
+      /* Get 25% of target player's points */
+      if (correct && pr.smite_target) {
+        var targetPr = m.preds[pr.smite_target];
+        if (targetPr) {
+          var targetPts = calcPts(m, targetPr);
+          if (targetPts > 0) {
+            bonus = targetPts * 0.25;
+            effectLabel = "+25% smite";
+          }
+        }
+      }
+      break;
+  }
+
+  return { pts: basePts, bonus: rd(bonus), itemEffect: effectLabel, total: rd(basePts + bonus) };
+}
+
 function winOf(t1, t2, sc) {
   if (!sc) return null;
   var p = sc.split("-");
@@ -1117,6 +1255,15 @@ function MatchCard(props) {
           </div>
         </div>
       )}
+      {/* Draven public bet announcement */}
+      {!played && assignedItems.filter(function(ai) { return ai.assigned_match_id === m.id && ai.item_id === "draven"; }).length > 0 && (
+        <div style={{ padding: "4px 14px", background: "#dc262610" }}>
+          {assignedItems.filter(function(ai) { return ai.assigned_match_id === m.id && ai.item_id === "draven"; }).map(function(ai) {
+            var p = players.find(function(pl) { return pl.name === ai.player_name; });
+            return <div key={ai.id} style={{ fontSize: 9, fontWeight: 700, color: "#dc2626", fontFamily: FD }}>🎭 {ai.player_name} ANNONCE UN PARFAIT ! (Pari de Draven)</div>;
+          })}
+        </div>
+      )}
       {pendingResult && (
         <div style={{ background: "linear-gradient(90deg, " + N2 + "12, transparent)", padding: "5px 14px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -1209,13 +1356,20 @@ function MatchCard(props) {
           {players.map(function(p) {
             var pr = m.preds[p.name] || {};
             var pt = calcPts(m, pr); var ok = pt > 0; var pf = pr.score === m.score && ok;
+            /* Check if player has an item on this match */
+            var pItem = assignedItems.find(function(ai) { return ai.assigned_match_id === m.id && ai.player_name === p.name; });
+            var pItemDef = pItem ? getItemById(pItem.item_id) : null;
+            var itemResult = pItemDef ? calcPtsWithItem(m, pr, pItemDef, m.preds, p.name, null, assignedItems, players) : null;
+            var totalPts = itemResult ? itemResult.total : pt;
+            var hasBonus = itemResult && itemResult.bonus !== 0;
             return (
               <div key={p.name} style={{ flex: 1, borderRadius: 10, padding: "6px 2px", textAlign: "center", background: pf ? "#FFD70008" : ok ? NG + "08" : N3 + "06", border: "1px solid " + (pf ? "#FFD70025" : ok ? NG + "18" : N3 + "15") }}>
                 <div style={{ fontSize: 12, marginBottom: 1 }}><MiniAvatar player={p} size={14} /></div>
                 <div style={{ fontSize: 9, fontWeight: 600, color: p.color }}>{p.name}</div>
                 <div style={{ fontSize: 9, color: TD }}>{pr.winner || "-"}</div>
                 <div style={{ fontSize: 9, color: TD }}>{pr.score || ""}</div>
-                <div style={{ fontSize: 12, fontWeight: 800, marginTop: 2, color: pf ? "#FFD700" : ok ? NG : N3 }}>{!pr.winner ? "-" : pf ? "+" + pt + " ★" : ok ? "+" + pt : "0"}</div>
+                <div style={{ fontSize: 12, fontWeight: 800, marginTop: 2, color: pf ? "#FFD700" : ok ? NG : N3 }}>{!pr.winner ? "-" : pf ? "+" + rd(totalPts) + " ★" : ok ? "+" + rd(totalPts) : hasBonus ? rd(itemResult.bonus) : "0"}</div>
+                {hasBonus && <div style={{ fontSize: 7, color: pItemDef.color, fontWeight: 700 }}>{pItemDef.icon} {itemResult.itemEffect}</div>}
               </div>
             );
           })}
@@ -1244,6 +1398,38 @@ function MatchCard(props) {
               </select>
             </div>
           </div>
+          {/* Oeil de la Riviere - second score */}
+          {(function() {
+            var myAssigned = assignedItems.find(function(ai) { return ai.assigned_match_id === m.id && ai.player_name === user && ai.item_id === "ward"; });
+            if (!myAssigned) return null;
+            var def = getItemById("ward");
+            return (
+              <div style={{ marginBottom: 12, padding: "8px 10px", borderRadius: 8, background: def.color + "08", border: "1px solid " + def.color + "25" }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: def.color, letterSpacing: 1, marginBottom: 4 }}>{def.icon} OEIL DE LA RIVIERE - 2eme score</div>
+                <select value={myPred.score2 || ""} onChange={function(e) { onUpdate(m.id, user, "score2", e.target.value || null); }}
+                  style={{ background: S2, color: TP, border: "1px solid " + BD, borderRadius: 8, padding: "6px 8px", fontSize: 11, width: "100%", outline: "none" }}>
+                  <option value="">2eme score...</option>
+                  {scores.filter(function(sc) { return sc !== myPred.score; }).map(function(sc) { return <option key={sc} value={sc}>{sc}</option>; })}
+                </select>
+              </div>
+            );
+          })()}
+          {/* Smite - target player selector */}
+          {(function() {
+            var myAssigned = assignedItems.find(function(ai) { return ai.assigned_match_id === m.id && ai.player_name === user && ai.item_id === "smite"; });
+            if (!myAssigned) return null;
+            var def = getItemById("smite");
+            return (
+              <div style={{ marginBottom: 12, padding: "8px 10px", borderRadius: 8, background: def.color + "08", border: "1px solid " + def.color + "25" }}>
+                <div style={{ fontSize: 9, fontWeight: 700, color: def.color, letterSpacing: 1, marginBottom: 4 }}>{def.icon} SMITE - Choisir une cible</div>
+                <select value={myPred.smite_target || ""} onChange={function(e) { onUpdate(m.id, user, "smite_target", e.target.value || null); }}
+                  style={{ background: S2, color: TP, border: "1px solid " + BD, borderRadius: 8, padding: "6px 8px", fontSize: 11, width: "100%", outline: "none" }}>
+                  <option value="">Cible...</option>
+                  {players.filter(function(p) { return p.name !== user; }).map(function(p) { return <option key={p.name} value={p.name}>{p.name}</option>; })}
+                </select>
+              </div>
+            );
+          })()}
           {isAdmin && (
             <div style={{ borderTop: "1px solid " + BD, paddingTop: 8, display: "flex", gap: 6, alignItems: "center" }}>
               <span style={{ fontSize: 10, fontWeight: 700, color: N1 }}>RESULTAT :</span>
@@ -1616,7 +1802,7 @@ function MatchListGrouped(props) {
 
 function MatchesPage(props) {
   var matches = props.matches; var players = props.players; var onUpdate = props.onUpdate; var user = props.currentUser; var isAdmin = props.isAdmin; var spoil = props.spoil;
-  var allItems = props.items || []; var activeSeason = props.activeSeason;
+  var allItems = props.items || []; var activeSeason = props.activeSeason; var onRollItems = props.onRollItems;
   var wf = useState("all"); var weekFilter = wf[0]; var setWf = wf[1];
 
   /* Get current user's pending items for this season */
@@ -1628,6 +1814,11 @@ function MatchesPage(props) {
   var assignedItems = allItems.filter(function(it) {
     return it.season_id === activeSeason && (it.status === "assigned" || it.status === "used");
   });
+
+  /* Find next week for admin roll */
+  var maxWeek = 0;
+  matches.forEach(function(m) { if (m.week > maxWeek) maxWeek = m.week; });
+  var nextRollWeek = maxWeek > 0 ? maxWeek : 1;
   var weeks = []; matches.forEach(function(m) { if (weeks.indexOf(m.week) === -1) weeks.push(m.week); }); weeks.sort();
   var fil = weekFilter === "all" ? matches : matches.filter(function(m) { return m.week === Number(weekFilter); });
   var up = fil.filter(function(m) { return !m.winner && !m.locked; });
@@ -1669,6 +1860,20 @@ function MatchesPage(props) {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Admin: Roll items for players */}
+      {isAdmin && onRollItems && (
+        <div style={{ marginBottom: 10 }}>
+          <button onClick={function() { onRollItems(nextRollWeek); }}
+            style={{ width: "100%", padding: "8px 14px", borderRadius: 10, border: "1px solid " + N2 + "40", background: N2 + "10", cursor: "pointer", display: "flex", alignItems: "center", gap: 8, fontFamily: FD }}>
+            <span style={{ fontSize: 16 }}>🎲</span>
+            <div style={{ flex: 1, textAlign: "left" }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: N2 }}>DISTRIBUER LES ITEMS</div>
+              <div style={{ fontSize: 8, color: TD }}>Semaine {nextRollWeek} - Tire un item pour chaque joueur selon le classement</div>
+            </div>
+          </button>
         </div>
       )}
 
@@ -2679,6 +2884,27 @@ export default function App() {
     setPreviewMode(function(v) { return !v; });
   }
 
+  /* Roll items for all players for a given week */
+  function handleRollItems(week) {
+    var revealed = seasonMatches.filter(function(m) { return m.revealed !== false; });
+    var stats = players.map(function(p) { var s = getStats(revealed, p.name); return Object.assign({}, p, s); }).sort(function(a, b) { return b.total - a.total; });
+    var promises = [];
+    stats.forEach(function(p, i) {
+      /* Check if player already has item for this week */
+      var existing = items.find(function(it) { return it.player_name === p.name && it.season_id === activeSeason && it.week === week; });
+      if (existing) return;
+      var rank = i + 1;
+      var item = rollItem(rank);
+      promises.push(supabase.from("items").insert({
+        player_name: p.name, season_id: activeSeason, week: week,
+        item_id: item.id, status: "pending",
+      }));
+    });
+    if (promises.length > 0) {
+      Promise.all(promises).then(function() { loadData(); });
+    }
+  }
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: BG, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", fontFamily: FB, color: TP }}>
@@ -2747,11 +2973,10 @@ export default function App() {
 
       <div style={{ padding: "14px 16px 70px", maxWidth: 660, margin: "0 auto" }}>
         {tab === "home" && <Dashboard matches={seasonMatches} players={players} currentUser={currentUser} onNav={setTab} spoil={spoil} seasonName={curSeason.short_name || curSeason.name} />}
-        {tab === "matches" && <MatchesPage matches={seasonMatches} players={players} onUpdate={handleUpdate} currentUser={currentUser} isAdmin={isAdmin} spoil={spoil} items={items} activeSeason={activeSeason} />}
+        {tab === "matches" && <MatchesPage matches={seasonMatches} players={players} onUpdate={handleUpdate} currentUser={currentUser} isAdmin={isAdmin} spoil={spoil} items={items} activeSeason={activeSeason} onRollItems={handleRollItems} />}
         {tab === "stats" && <StatsPage matches={seasonMatches} players={players} spoil={spoil} />}
         {tab === "profile" && <ProfilePage matches={allMatches} players={players} currentUser={currentUser} onUpdatePlayer={handleUpdatePlayer} onTogglePreview={handleTogglePreview} previewMode={previewMode} />}
       </div>
     </div>
-    
   );
 }
