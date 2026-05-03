@@ -1928,9 +1928,10 @@ function MatchesPage(props) {
 
             {/* Compact item guide - all tiers in a grid */}
             <div style={{ fontSize: 8, fontWeight: 700, color: TD, letterSpacing: 2, marginBottom: 4 }}>TOUS LES ITEMS</div>
-            {[{ tier: 1, label: "T1", color: "#6b8cff" }, { tier: 2, label: "T2", color: "#a855f7" }, { tier: 3, label: "T3", color: "#f97316" }, { tier: 0, label: "★", color: "#ec4899" }].map(function(tg) {
+            {[{ tier: 1, label: "T1 COMMON", color: "#6b8cff" }, { tier: 2, label: "T2 RARE", color: "#a855f7" }, { tier: 3, label: "T3 LEGENDAIRE", color: "#f97316" }, { tier: 0, label: "BONUS", color: "#ec4899" }].map(function(tg) {
               return (
                 <div key={tg.tier} style={{ marginBottom: 4 }}>
+                  <div style={{ fontSize: 7, fontWeight: 700, color: tg.color, letterSpacing: 2, marginBottom: 2 }}>{tg.label}</div>
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                     {ITEMS.filter(function(it) { return it.tier === tg.tier; }).map(function(it) {
                       return (
