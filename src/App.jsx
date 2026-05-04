@@ -334,7 +334,7 @@ function calcPtsWithItem(m, pr, itemDef, allPreds, playerName, weekMatches, allI
       if (correct) { bonus = 0.5; effectLabel = "+0.5"; }
       break;
     case "upset_bonus":
-      if (correct && isUpset) { bonus = 1; effectLabel = "+1 upset"; }
+      if (correct && isUpset) { bonus = 1; effectLabel = "+1 risque"; }
       break;
     case "streak_bonus":
       /* Check if previous match in this week was also correct */
@@ -1304,39 +1304,54 @@ function MatchCard(props) {
           <span style={{ fontSize: 9, color: TD }}>{m.day}</span>
         </div>
       )}
-      {played && <div style={{ padding: "3px 14px", background: S2 }}><span style={{ fontSize: 9, color: TD, letterSpacing: 1 }}>{spoil ? m.day : "TERMINE - " + m.day}</span></div>}
-      <div style={{ padding: "12px 14px", display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }} onClick={function() { if (!locked || isAdmin) setEx(!expanded); }}>
-        <TeamLogo team={m.team1} size={32} />
-        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 13, flex: 1, textAlign: "right", color: !spoil && played && m.winner === m.team1 ? NG : TP }}>{m.team1}</span>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 72 }}>
-          <div style={{ display: "flex", gap: 5, fontSize: 10 }}>
+      {played && <div style={{ padding: "2px 12px", background: S2 }}><span style={{ fontSize: 8, color: TD, letterSpacing: 1 }}>{spoil ? m.day : m.day}</span></div>}
+      <div style={{ padding: "6px 10px", display: "flex", alignItems: "center", gap: 4 }}>
+        <TeamLogo team={m.team1} size={22} />
+        {!played && !pendingResult && !locked ? (
+          <button onClick={function(e) { e.stopPropagation(); onUpdate(m.id, user, "winner", m.team1); setEx(true); }}
+            style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, flex: 1, textAlign: "right", color: myPred.winner === m.team1 ? NG : TP, background: myPred.winner === m.team1 ? NG + "10" : "transparent", border: myPred.winner === m.team1 ? "1px solid " + NG + "30" : "1px solid transparent", borderRadius: 6, padding: "3px 6px", cursor: "pointer" }}>{m.team1}</button>
+        ) : (
+          <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, flex: 1, textAlign: "right", color: !spoil && played && m.winner === m.team1 ? NG : TP }}>{m.team1}</span>
+        )}
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", minWidth: 50 }}>
+          <div style={{ display: "flex", gap: 3, fontSize: 8 }}>
             <span style={{ color: N3, fontWeight: 600 }}>{m.cote1}</span>
             <span style={{ color: TD }}>|</span>
             <span style={{ color: N2, fontWeight: 600 }}>{m.cote2}</span>
           </div>
-          {played && !spoil && <div style={{ fontFamily: FD, fontSize: 20, fontWeight: 800, color: NG, letterSpacing: 2 }}>{m.score}</div>}
-          {played && spoil && <div style={{ fontSize: 14, marginTop: 2 }}>🔒</div>}
-          {pendingResult && <div style={{ fontSize: 14, marginTop: 2 }}>⏳</div>}
-          {!played && !pendingResult && <div style={{ fontSize: 13, fontWeight: 800, color: N1, marginTop: 2 }}>VS</div>}
+          {played && !spoil && <div style={{ fontFamily: FD, fontSize: 14, fontWeight: 800, color: NG, letterSpacing: 2 }}>{m.score}</div>}
+          {played && spoil && <div style={{ fontSize: 11 }}>🔒</div>}
+          {pendingResult && <div style={{ fontSize: 11 }}>⏳</div>}
+          {!played && !pendingResult && <div style={{ fontSize: 10, fontWeight: 800, color: N1 }}>VS</div>}
         </div>
-        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 13, flex: 1, color: !spoil && played && m.winner === m.team2 ? NG : TP }}>{m.team2}</span>
-        <TeamLogo team={m.team2} size={32} />
-        {(!locked || isAdmin) && <span style={{ fontSize: 10, color: TD, transform: expanded ? "rotate(180deg)" : "", transition: "transform 0.2s" }}>▼</span>}
+        {!played && !pendingResult && !locked ? (
+          <button onClick={function(e) { e.stopPropagation(); onUpdate(m.id, user, "winner", m.team2); setEx(true); }}
+            style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, flex: 1, color: myPred.winner === m.team2 ? NG : TP, background: myPred.winner === m.team2 ? NG + "10" : "transparent", border: myPred.winner === m.team2 ? "1px solid " + NG + "30" : "1px solid transparent", borderRadius: 6, padding: "3px 6px", cursor: "pointer" }}>{m.team2}</button>
+        ) : (
+          <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, flex: 1, color: !spoil && played && m.winner === m.team2 ? NG : TP }}>{m.team2}</span>
+        )}
+        <TeamLogo team={m.team2} size={22} />
       </div>
-      {!played && !pendingResult && !expanded && (
-        <div style={{ padding: "0 14px 10px" }}>
-          {locked ? (
-            <div style={{ padding: "6px 10px", borderRadius: 8, background: TD + "10", border: "1px solid " + TD + "25", fontSize: 11, color: TD, fontWeight: 600 }}>🔒 Prono verrouille{myPred.winner ? " : " + myPred.winner + " - " + myPred.score : ""}</div>
-          ) : myPred.winner ? (
-            <div style={{ padding: "6px 10px", borderRadius: 8, background: NG + "10", border: "1px solid " + NG + "25", fontSize: 11, color: NG, fontWeight: 600 }}>Ton prono : {myPred.winner} - {myPred.score}</div>
-          ) : (
-            <div style={{ padding: "6px 10px", borderRadius: 8, background: N2 + "10", border: "1px solid " + N2 + "25", fontSize: 11, color: N2, fontWeight: 600 }}>Clique pour pronostiquer</div>
-          )}
+      {/* Inline score selector - appears right after selecting winner */}
+      {!played && !pendingResult && !locked && myPred.winner && (
+        <div style={{ padding: "0 10px 6px" }}>
+          <div style={{ display: "flex", gap: 2 }}>
+            {scores.map(function(sc) {
+              var active = myPred.score === sc;
+              return <button key={sc} onClick={function() { onUpdate(m.id, user, "score", sc); }}
+                style={{ flex: 1, padding: "4px 2px", borderRadius: 5, border: active ? "1px solid " + NG + "50" : "1px solid " + BD, background: active ? NG + "12" : S2, cursor: "pointer", fontFamily: FD, fontWeight: 700, fontSize: 10, color: active ? NG : TD }}>{sc}</button>;
+            })}
+          </div>
         </div>
       )}
-      {pendingResult && (
-        <div style={{ padding: "0 14px 10px" }}>
-          <div style={{ padding: "6px 10px", borderRadius: 8, background: N2 + "08", border: "1px solid " + N2 + "20", fontSize: 11, color: N2, fontWeight: 600 }}>⏳ Resultat devoile au prochain match day{myPred.winner ? " | Ton prono : " + myPred.winner + " " + myPred.score : ""}</div>
+      {!played && !pendingResult && locked && myPred.winner && (
+        <div style={{ padding: "0 10px 6px" }}>
+          <div style={{ fontSize: 9, color: TD, fontWeight: 600 }}>🔒 {myPred.winner} - {myPred.score}</div>
+        </div>
+      )}
+      {pendingResult && myPred.winner && (
+        <div style={{ padding: "0 10px 6px" }}>
+          <div style={{ fontSize: 9, color: N2, fontWeight: 600 }}>⏳ {myPred.winner} {myPred.score}</div>
         </div>
       )}
       {/* Item assignment button - show on upcoming matches when player has pending items and has already pronoed */}
@@ -1446,38 +1461,22 @@ function MatchCard(props) {
         <div style={{ padding: "0 14px 10px", textAlign: "center" }}><div style={{ padding: 8, borderRadius: 8, border: "1px dashed " + N1 + "40", background: N1 + "06", fontSize: 10, color: N1, fontWeight: 600 }}>🔒 Masque</div></div>
       )}
       {!played && expanded && (
-        <div style={{ borderTop: "1px solid " + BD, padding: "10px 14px" }}>
-          <div style={{ fontSize: 9, fontWeight: 700, color: N1, letterSpacing: 2, marginBottom: 8 }}>TON PRONOSTIC</div>
-          <div style={{ display: "flex", gap: 6, marginBottom: 12 }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, fontWeight: 600, color: TD, marginBottom: 2 }}>VAINQUEUR</div>
-              <select value={myPred.winner || ""} onChange={function(e) { onUpdate(m.id, user, "winner", e.target.value || null); }} style={{ background: S2, color: TP, border: "1px solid " + BD, borderRadius: 8, padding: "6px 8px", fontSize: 11, width: "100%", outline: "none" }}>
-                <option value="">Choisis...</option>
-                <option value={m.team1}>{m.team1}</option>
-                <option value={m.team2}>{m.team2}</option>
-              </select>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 9, fontWeight: 600, color: TD, marginBottom: 2 }}>SCORE</div>
-              <select value={myPred.score || ""} onChange={function(e) { onUpdate(m.id, user, "score", e.target.value || null); }} style={{ background: S2, color: TP, border: "1px solid " + BD, borderRadius: 8, padding: "6px 8px", fontSize: 11, width: "100%", outline: "none" }}>
-                <option value="">Score...</option>
-                {scores.map(function(sc) { return <option key={sc} value={sc}>{sc}</option>; })}
-              </select>
-            </div>
-          </div>
+        <div style={{ borderTop: "1px solid " + BD, padding: "6px 10px" }}>
           {/* Oeil de la Riviere - second score */}
           {(function() {
             var myAssigned = assignedItems.find(function(ai) { return ai.assigned_match_id === m.id && ai.player_name === user && ai.item_id === "ward"; });
             if (!myAssigned) return null;
             var def = getItemById("ward");
             return (
-              <div style={{ marginBottom: 12, padding: "8px 10px", borderRadius: 8, background: def.color + "08", border: "1px solid " + def.color + "25" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: def.color, letterSpacing: 1, marginBottom: 4 }}>{def.icon} OEIL DE LA RIVIERE - 2eme score</div>
-                <select value={myPred.score2 || ""} onChange={function(e) { onUpdate(m.id, user, "score2", e.target.value || null); }}
-                  style={{ background: S2, color: TP, border: "1px solid " + BD, borderRadius: 8, padding: "6px 8px", fontSize: 11, width: "100%", outline: "none" }}>
-                  <option value="">2eme score...</option>
-                  {scores.filter(function(sc) { return sc !== myPred.score; }).map(function(sc) { return <option key={sc} value={sc}>{sc}</option>; })}
-                </select>
+              <div style={{ marginBottom: 6, padding: "6px 8px", borderRadius: 6, background: def.color + "08", border: "1px solid " + def.color + "25" }}>
+                <div style={{ fontSize: 8, fontWeight: 700, color: def.color, letterSpacing: 1, marginBottom: 3 }}>{def.icon} 2eme score</div>
+                <div style={{ display: "flex", gap: 2 }}>
+                  {scores.filter(function(sc) { return sc !== myPred.score; }).map(function(sc) {
+                    var active = myPred.score2 === sc;
+                    return <button key={sc} onClick={function() { onUpdate(m.id, user, "score2", sc); }}
+                      style={{ flex: 1, padding: "3px 2px", borderRadius: 4, border: active ? "1px solid " + def.color + "50" : "1px solid " + BD, background: active ? def.color + "12" : S2, cursor: "pointer", fontFamily: FD, fontWeight: 700, fontSize: 9, color: active ? def.color : TD }}>{sc}</button>;
+                  })}
+                </div>
               </div>
             );
           })()}
@@ -1487,13 +1486,15 @@ function MatchCard(props) {
             if (!myAssigned) return null;
             var def = getItemById("smite");
             return (
-              <div style={{ marginBottom: 12, padding: "8px 10px", borderRadius: 8, background: def.color + "08", border: "1px solid " + def.color + "25" }}>
-                <div style={{ fontSize: 9, fontWeight: 700, color: def.color, letterSpacing: 1, marginBottom: 4 }}>{def.icon} SMITE - Choisir une cible</div>
-                <select value={myPred.smite_target || ""} onChange={function(e) { onUpdate(m.id, user, "smite_target", e.target.value || null); }}
-                  style={{ background: S2, color: TP, border: "1px solid " + BD, borderRadius: 8, padding: "6px 8px", fontSize: 11, width: "100%", outline: "none" }}>
-                  <option value="">Cible...</option>
-                  {players.filter(function(p) { return p.name !== user; }).map(function(p) { return <option key={p.name} value={p.name}>{p.name}</option>; })}
-                </select>
+              <div style={{ marginBottom: 6, padding: "6px 8px", borderRadius: 6, background: def.color + "08", border: "1px solid " + def.color + "25" }}>
+                <div style={{ fontSize: 8, fontWeight: 700, color: def.color, letterSpacing: 1, marginBottom: 3 }}>{def.icon} SMITE - Cible</div>
+                <div style={{ display: "flex", gap: 2 }}>
+                  {players.filter(function(p) { return p.name !== user; }).map(function(p) {
+                    var active = myPred.smite_target === p.name;
+                    return <button key={p.name} onClick={function() { onUpdate(m.id, user, "smite_target", p.name); }}
+                      style={{ flex: 1, padding: "3px 2px", borderRadius: 4, border: active ? "1px solid " + def.color + "50" : "1px solid " + BD, background: active ? def.color + "12" : S2, cursor: "pointer", fontSize: 8, fontWeight: 700, color: active ? p.color : TD }}>{p.name}</button>;
+                  })}
+                </div>
               </div>
             );
           })()}
@@ -1574,18 +1575,20 @@ function Dashboard(props) {
     }).sort(function(a, b) { return b.pts - a.pts; });
   }
 
-  /* Activity feed */
-  var feed = [];
+  /* Activity feed - grouped by match */
+  var feedMatches = [];
   revealedMatches.forEach(function(m) {
     if (!m.winner) return;
+    var results = [];
     players.forEach(function(p) {
       var pr = m.preds[p.name]; if (!pr || !pr.winner) return;
       var pt = calcPts(m, pr); var pf = pr.score === m.score && pt > 0;
-      var upset = pt > 0 && ((m.winner === m.team1 && m.cote1 > m.cote2) || (m.winner === m.team2 && m.cote2 > m.cote1));
-      feed.push({ p: p, pts: pt, pf: pf, upset: upset, emoji: pf ? "★" : upset ? "🎲" : pt > 0 ? "✓" : "✗", mt: m.team1 + " vs " + m.team2, week: m.week });
+      results.push({ p: p, pts: pt, pf: pf });
     });
+    if (results.length > 0) feedMatches.push({ m: m, results: results });
   });
-  feed.reverse(); feed = feed.slice(0, 8);
+  feedMatches.reverse();
+  feedMatches = feedMatches.slice(0, 6);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -1744,20 +1747,27 @@ function Dashboard(props) {
         </div>
       )}
 
-      {!spoil && feed.length > 0 && (
+      {!spoil && feedMatches.length > 0 && (
         <NeonCard glow={N2}>
           <div style={{ fontSize: 10, fontWeight: 700, color: N2, letterSpacing: 3, marginBottom: 10 }}>DERNIERS RESULTATS</div>
-          {feed.map(function(f, i) {
+          {feedMatches.map(function(fm, i) {
             return (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: i < feed.length - 1 ? "1px solid " + BD : "none" }}>
-                <span style={{ fontSize: 12, width: 18, textAlign: "center" }}>{f.emoji}</span>
-                <span style={{ fontSize: 12 }}><MiniAvatar player={f.p} size={14} /></span>
-                <div style={{ flex: 1, fontSize: 10 }}>
-                  <span style={{ fontWeight: 700, color: f.p.color }}>{f.p.name}</span>
-                  <span style={{ color: TD }}> {f.mt}</span>
-                  {f.upset && <span style={{ fontSize: 8, color: N2, marginLeft: 4 }}>UPSET</span>}
+              <div key={i} style={{ padding: "6px 0", borderBottom: i < feedMatches.length - 1 ? "1px solid " + BD : "none" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+                  <TeamLogo team={fm.m.team1} size={14} />
+                  <span style={{ fontSize: 9, color: TD }}>{fm.m.team1} vs {fm.m.team2}</span>
+                  <span style={{ fontSize: 8, fontWeight: 700, color: NG }}>{fm.m.score}</span>
                 </div>
-                <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 11, color: f.pts > 0 ? (f.pf ? "#FFD700" : NG) : N3 }}>{f.pts > 0 ? "+" + rd(f.pts) : "0"}</span>
+                <div style={{ display: "flex", gap: 4 }}>
+                  {fm.results.map(function(r2) {
+                    return (
+                      <div key={r2.p.name} style={{ display: "flex", alignItems: "center", gap: 3, padding: "2px 6px", borderRadius: 5, background: r2.pf ? "#FFD70008" : r2.pts > 0 ? NG + "06" : N3 + "04", border: "1px solid " + (r2.pf ? "#FFD70020" : r2.pts > 0 ? NG + "12" : N3 + "10") }}>
+                        <span style={{ fontSize: 8, fontWeight: 700, color: r2.p.color }}>{r2.p.name}</span>
+                        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 9, color: r2.pts > 0 ? (r2.pf ? "#FFD700" : NG) : N3 }}>{r2.pts > 0 ? "+" + rd(r2.pts) : "0"}{r2.pf ? "★" : ""}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
@@ -2328,7 +2338,7 @@ function StatsPage(props) {
                         { l: "Matchs", v: s.played, c: TP },
                         { l: "Victoires", v: s.wins, c: NG },
                         { l: "Parfaits", v: s.perfects, c: "#FFD700" },
-                        { l: "Upsets", v: s.upsets, c: N2 },
+                        { l: "Risques", v: s.upsets, c: N2 },
                         { l: "Max serie", v: s.maxStreak, c: N1 },
                         { l: "Moy/match", v: s.played > 0 ? (s.total / s.played).toFixed(1) : "0", c: TP },
                       ].map(function(st) {
@@ -2467,7 +2477,7 @@ function StatsPage(props) {
                     { l: "Winrate", v1: s1p.wr + "%", v2: s2p.wr + "%" },
                     { l: "Victoires", v1: s1p.wins, v2: s2p.wins },
                     { l: "Parfaits", v1: s1p.perfects, v2: s2p.perfects },
-                    { l: "Upsets", v1: s1p.upsets, v2: s2p.upsets },
+                    { l: "Risques", v1: s1p.upsets, v2: s2p.upsets },
                     { l: "Max serie", v1: s1p.maxStreak, v2: s2p.maxStreak },
                   ].map(function(row) {
                     var n1 = parseFloat(row.v1); var n2 = parseFloat(row.v2);
