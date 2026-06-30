@@ -22,16 +22,28 @@ const FB = "'DM Sans', sans-serif";
 
 /* ----- Teams (abbreviation + couleur ; logos ajoutables plus tard) ----- */
 const TEAMS = {
-  "G2 Esports": { a: "G2", c: "#00f0ff" }, "SK Gaming": { a: "SK", c: "#0088cc" },
-  "Heretics": { a: "TH", c: "#ff4655" }, "NaVi": { a: "NAVI", c: "#ffd700" },
-  "GIANTX": { a: "GX", c: "#00c8ff" }, "Fnatic": { a: "FNC", c: "#ff5900" },
-  "Shifters": { a: "SHFT", c: "#6c5ce7" }, "Vitality": { a: "VIT", c: "#fee800" },
-  "KCorp": { a: "KC", c: "#4a90d9" }, "KOI": { a: "KOI", c: "#00a6ff" },
-  "Los Ratones": { a: "LR", c: "#c87533" },
+  "G2 Esports": { a: "G2", c: "#00f0ff", logo: "https://static.lolesports.com/teams/G2-FullonDark.png" },
+  "SK Gaming": { a: "SK", c: "#0088cc", logo: "https://static.lolesports.com/teams/1643979272144_SK_Monochrome.png" },
+  "Heretics": { a: "TH", c: "#ff4655", logo: "https://static.lolesports.com/teams/1672933861879_Heretics-Full-Color.png" },
+  "NaVi": { a: "NAVI", c: "#ffd700", logo: "https://static.lolesports.com/teams/1752746833620_NAVI_FullColor.png" },
+  "GIANTX": { a: "GX", c: "#00c8ff", logo: "https://static.lolesports.com/teams/1765897105091_GIANTX-logotype-white.png" },
+  "Fnatic": { a: "FNC", c: "#ff5900", logo: "https://static.lolesports.com/teams/1631819669150_fnc-2021-worlds.png" },
+  "Shifters": { a: "SHFT", c: "#6c5ce7", logo: "https://static.lolesports.com/teams/1765897071435_600px-Shifters_allmode.png" },
+  "Vitality": { a: "VIT", c: "#fee800", logo: "https://static.lolesports.com/teams/1675865863968_Vitality_FullColor.png" },
+  "KCorp": { a: "KC", c: "#4a90d9", logo: "https://static.lolesports.com/teams/1704714951336_KC.png" },
+  "Karmine Corp": { a: "KC", c: "#00bfff", logo: "https://static.lolesports.com/teams/1704714951336_KC.png" },
+  "KOI": { a: "KOI", c: "#00a6ff", logo: "https://static.lolesports.com/teams/1734012609283_MKOI_FullColor_Blue.png" },
+  "Los Ratones": { a: "LR", c: "#c87533", logo: "https://static.lolesports.com/teams/1736206905390_LR1.png" },
   "Top Esports": { a: "TES", c: "#d20a2e" }, "T1": { a: "T1", c: "#e2012d" },
   "Hanwha Life": { a: "HLE", c: "#ff7900" }, "Bilibili Gaming": { a: "BLG", c: "#2a4bd7" },
   "LYON": { a: "LYON", c: "#1f8fff" }, "FURIA": { a: "FUR", c: "#111111" },
   "Team Secret Whales": { a: "TSW", c: "#0fb5a0" }, "Revolve Deep Cross": { a: "RDCG", c: "#e23b6d" },
+  "Team Liquid": { a: "TL", c: "#0a1432" },
+};
+
+/* Participants par competition (pour filtrer les suggestions a la creation d'un match) */
+const ROSTERS = {
+  "MSI 2026": ["G2 Esports", "Top Esports", "Bilibili Gaming", "Hanwha Life", "T1", "LYON", "FURIA", "Team Secret Whales", "Karmine Corp", "Revolve Deep Cross", "Team Liquid"],
 };
 const PALETTE = ["#00f0ff", "#a855f7", "#f43f5e", "#22d3ee", "#fbbf24", "#10b981", "#f97316", "#ec4899"];
 function teamInfo(name) {
@@ -81,6 +93,7 @@ function fmtCountdown(ms) {
 export default function App() {
   const [me, setMe] = useState(() => { try { return localStorage.getItem("lec_me") || null; } catch { return null; } });
   const [tab, setTab] = useState("matchs");
+  const [selectedId, setSelectedId] = useState(null);
   const [players, setPlayers] = useState([]);
   const [matches, setMatches] = useState([]);
   const [seasons, setSeasons] = useState([]);
@@ -143,9 +156,8 @@ export default function App() {
     await supabase.from("seasons").insert({ id, name, short_name: short, status: "inactive" });
     loadData();
   }
-  async function activateSeason(id) {
-    await supabase.from("seasons").update({ status: "inactive" }).eq("status", "active");
-    await supabase.from("seasons").update({ status: "active" }).eq("id", id);
+  async function toggleSeason(id, makeActive) {
+    await supabase.from("seasons").update({ status: makeActive ? "active" : "inactive" }).eq("id", id);
     loadData();
   }
   async function addMatch(d) {
@@ -162,9 +174,16 @@ export default function App() {
     loadData();
   }
 
-  /* ----- saison active ----- */
-  const season = seasons.find(s => s.status === "active") || seasons[seasons.length - 1] || { id: 1, short_name: "LEC", name: "LEC" };
+  /* ----- competitions actives + selection ----- */
+  const activeSeasons = seasons.filter(s => s.status === "active");
+  const visibleSeasons = activeSeasons.length ? activeSeasons : (seasons.length ? [seasons[seasons.length - 1]] : [{ id: 1, short_name: "LEC", name: "LEC", status: "active" }]);
+  const season = visibleSeasons.find(s => s.id === selectedId) || visibleSeasons[0];
   const seasonMatches = matches.filter(m => m.season_id === season.id || (!m.season_id && season.id === 1));
+
+  /* ----- equipes proposees pour la competition active ----- */
+  const usedTeams = [...new Set(seasonMatches.flatMap(m => [m.team1, m.team2]))];
+  const roster = ROSTERS[season.name] || ROSTERS[season.short_name];
+  const compTeams = roster || (usedTeams.length ? usedTeams : Object.keys(TEAMS));
 
   /* ----- reveal anti-spoil : un resultat se devoile quand le 1er match de la semaine suivante a commence ----- */
   const enriched = seasonMatches.map(m => {
@@ -199,7 +218,7 @@ export default function App() {
 
   return (
     <div style={{ minHeight: "100vh", background: C.bg, color: C.tp, fontFamily: FB, maxWidth: 480, margin: "0 auto", paddingBottom: 88 }}>
-      <Header me={me} token={playerToken(me)} comp={season.short_name || season.name} onLogout={logout} />
+      <Header me={me} token={playerToken(me)} comps={visibleSeasons} current={season} onSelect={setSelectedId} onLogout={logout} />
       <div style={{ padding: "0 14px" }}>
         {tab === "matchs" && (
           <MatchesScreen upcoming={upcoming} done={done} me={me} players={players} now={now} onSave={savePred} playerToken={playerToken} />
@@ -209,8 +228,8 @@ export default function App() {
         )}
         {tab === "profil" && <Profil me={me} token={playerToken(me)} standings={standings} onLogout={logout} />}
         {tab === "admin" && isAdmin && (
-          <Admin seasons={seasons} activeId={season.id} matches={enriched}
-            onCreateSeason={createSeason} onActivate={activateSeason} onAddMatch={addMatch} onSetResult={setResult} onDeleteMatch={deleteMatch} />
+          <Admin seasons={seasons} activeId={season.id} compTeams={compTeams} matches={enriched}
+            onCreateSeason={createSeason} onToggle={toggleSeason} onAddMatch={addMatch} onSetResult={setResult} onDeleteMatch={deleteMatch} />
         )}
       </div>
       <Tabs tab={tab} setTab={setTab} isAdmin={isAdmin} />
@@ -249,20 +268,35 @@ function Login({ players, onLogin }) {
   );
 }
 
-function Header({ me, token, comp, onLogout }) {
+function Header({ me, token, comps, current, onSelect, onLogout }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 14px 14px" }}>
-      <div>
+    <div style={{ padding: "16px 14px 12px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ fontFamily: FD, fontWeight: 800, fontSize: 18, letterSpacing: 1 }}>
           LEC <span style={{ color: C.n1, textShadow: "0 0 10px rgba(0,240,255,.5)" }}>PRONOS</span>
         </div>
-        <div style={{ fontFamily: FD, fontSize: 11, letterSpacing: 2, color: C.td, marginTop: 3 }}>{(comp || "").toUpperCase()}</div>
+        <button onClick={onLogout} title="Changer de joueur"
+          style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "none", border: "none", cursor: "pointer" }}>
+          <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 9, color: C.n2, letterSpacing: 1 }}>{token}</span>
+          <span style={{ width: 31, height: 31, borderRadius: "50%", background: C.s2, border: "1.5px solid " + C.n2, color: C.n2, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FD, fontWeight: 700, fontSize: 13, boxShadow: "0 0 10px rgba(168,85,247,.4)" }}>{me[0]}</span>
+        </button>
       </div>
-      <button onClick={onLogout} title="Changer de joueur"
-        style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, background: "none", border: "none", cursor: "pointer" }}>
-        <span style={{ fontFamily: FD, fontWeight: 700, fontSize: 9, color: C.n2, letterSpacing: 1 }}>{token}</span>
-        <span style={{ width: 31, height: 31, borderRadius: "50%", background: C.s2, border: "1.5px solid " + C.n2, color: C.n2, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FD, fontWeight: 700, fontSize: 13, boxShadow: "0 0 10px rgba(168,85,247,.4)" }}>{me[0]}</span>
-      </button>
+      {comps.length > 1 ? (
+        <div style={{ display: "flex", gap: 7, marginTop: 12, overflowX: "auto" }}>
+          {comps.map(c => {
+            const on = c.id === current.id;
+            return (
+              <button key={c.id} onClick={() => onSelect(c.id)}
+                style={{ flexShrink: 0, fontFamily: FD, fontWeight: 600, fontSize: 11, letterSpacing: 1, padding: "6px 12px", borderRadius: 20, cursor: "pointer",
+                  border: "1px solid " + (on ? C.n1 : C.bd), background: on ? "rgba(0,240,255,.08)" : "transparent", color: on ? C.n1 : C.td }}>
+                {(c.short_name || c.name).toUpperCase()}
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ fontFamily: FD, fontSize: 11, letterSpacing: 2, color: C.td, marginTop: 4 }}>{((current.short_name || current.name) || "").toUpperCase()}</div>
+      )}
     </div>
   );
 }
@@ -291,6 +325,11 @@ function MatchesScreen({ upcoming, done, me, players, now, onSave, playerToken }
 
 function Badge({ name, size = 38 }) {
   const ti = teamInfo(name);
+  const [err, setErr] = useState(false);
+  if (ti.logo && !err) {
+    return <img src={ti.logo} alt={name} onError={() => setErr(true)}
+      style={{ width: size, height: size, borderRadius: size * 0.2, objectFit: "contain", background: "#0a0a16", flexShrink: 0 }} />;
+  }
   const fs = ti.a.length >= 4 ? size * 0.26 : size * 0.32;
   return (
     <span style={{ width: size, height: size, borderRadius: size * 0.24, background: ti.c, color: "#06060e", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: FD, fontWeight: 700, fontSize: fs, flexShrink: 0 }}>{ti.a}</span>
@@ -564,11 +603,12 @@ function winnerFromScore(sc, team1, team2) {
   return p[0] > p[1] ? team1 : team2;
 }
 
-function Admin({ seasons, activeId, matches, onCreateSeason, onActivate, onAddMatch, onSetResult, onDeleteMatch }) {
+function Admin({ seasons, activeId, compTeams, matches, onCreateSeason, onToggle, onAddMatch, onSetResult, onDeleteMatch }) {
   const [sName, setSName] = useState("");
   const [sShort, setSShort] = useState("");
   const [f, setF] = useState({ team1: "", team2: "", bo: 5, cote1: "", cote2: "", week: 1, day: "", start: "" });
   const up = (k, v) => setF(p => ({ ...p, [k]: v }));
+  const activeName = (seasons.find(s => s.id === activeId) || {}).name || "—";
 
   const inS = { width: "100%", background: "#0a0a16", border: "1px solid " + C.bd, borderRadius: 8, padding: "10px 11px", color: C.tp, fontFamily: FB, fontSize: 14, marginTop: 5, boxSizing: "border-box" };
   const lblS = { fontFamily: FD, fontSize: 10, letterSpacing: 1, color: C.td, display: "block", marginTop: 11 };
@@ -583,18 +623,20 @@ function Admin({ seasons, activeId, matches, onCreateSeason, onActivate, onAddMa
 
   return (
     <div style={{ paddingTop: 8 }}>
-      <datalist id="teamlist">{Object.keys(TEAMS).map(t => <option key={t} value={t} />)}</datalist>
+      <datalist id="teamlist">{compTeams.map(t => <option key={t} value={t} />)}</datalist>
 
       <SectionTitle>COMPÉTITIONS</SectionTitle>
       <div style={cardS}>
-        {seasons.map(s => (
-          <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #14142a" }}>
-            <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 14, flex: 1 }}>{s.name}</span>
-            {s.id === activeId
-              ? <span style={{ fontFamily: FD, fontSize: 10, color: C.n1, letterSpacing: 1, border: "1px solid " + C.n1, borderRadius: 4, padding: "2px 7px" }}>ACTIVE</span>
-              : <button onClick={() => onActivate(s.id)} style={btnS(C.s2, C.n1)}>ACTIVER</button>}
-          </div>
-        ))}
+        {seasons.map(s => {
+          const active = s.status === "active";
+          return (
+            <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #14142a" }}>
+              <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 14, flex: 1, color: active ? C.tp : C.td }}>{s.name}</span>
+              {active && <span style={{ fontFamily: FD, fontSize: 10, color: C.n1, letterSpacing: 1, border: "1px solid " + C.n1, borderRadius: 4, padding: "2px 7px" }}>ACTIVE</span>}
+              <button onClick={() => onToggle(s.id, !active)} style={btnS(C.s2, active ? C.td : C.n1)}>{active ? "DÉSACTIVER" : "ACTIVER"}</button>
+            </div>
+          );
+        })}
         <div style={{ marginTop: 12 }}>
           <label style={lblS}>NOUVELLE COMPÉTITION — NOM</label>
           <input style={inS} value={sName} onChange={e => setSName(e.target.value)} placeholder="MSI 2026" />
@@ -608,6 +650,7 @@ function Admin({ seasons, activeId, matches, onCreateSeason, onActivate, onAddMa
 
       <SectionTitle>AJOUTER UN MATCH</SectionTitle>
       <div style={cardS}>
+        <div style={{ fontFamily: FB, fontSize: 11, color: C.td, marginBottom: 2 }}>Ajouté à : <b style={{ color: C.n1 }}>{activeName}</b> <span style={{ color: "#3a3a55" }}>(change via le sélecteur en haut)</span></div>
         <div style={{ display: "flex", gap: 8 }}>
           <div style={{ flex: 1 }}><label style={lblS}>ÉQUIPE 1</label><input list="teamlist" style={inS} value={f.team1} onChange={e => up("team1", e.target.value)} placeholder="G2 Esports" /></div>
           <div style={{ flex: 1 }}><label style={lblS}>ÉQUIPE 2</label><input list="teamlist" style={inS} value={f.team2} onChange={e => up("team2", e.target.value)} placeholder="Top Esports" /></div>
