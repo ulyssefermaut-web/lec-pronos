@@ -132,6 +132,36 @@ export default function App() {
   function login(name) { try { localStorage.setItem("lec_me", name); } catch {} setMe(name); }
   function logout() { try { localStorage.removeItem("lec_me"); } catch {} setMe(null); }
 
+  /* ----- admin (proprietaire) ----- */
+  const isAdmin = me === "Ulysse";
+  async function nextId(table) {
+    const r = await supabase.from(table).select("id").order("id", { ascending: false }).limit(1);
+    return ((r.data && r.data[0] && r.data[0].id) || 0) + 1;
+  }
+  async function createSeason(name, short) {
+    const id = await nextId("seasons");
+    await supabase.from("seasons").insert({ id, name, short_name: short, status: "inactive" });
+    loadData();
+  }
+  async function activateSeason(id) {
+    await supabase.from("seasons").update({ status: "inactive" }).eq("status", "active");
+    await supabase.from("seasons").update({ status: "active" }).eq("id", id);
+    loadData();
+  }
+  async function addMatch(d) {
+    const id = await nextId("matches");
+    await supabase.from("matches").insert({ id, season_id: d.season_id, week: d.week, day: d.day, team1: d.team1, team2: d.team2, bo: d.bo, cote1: d.cote1, cote2: d.cote2, winner: null, score: null, start_time: d.start_time });
+    loadData();
+  }
+  async function setResult(matchId, winner, score) {
+    await supabase.from("matches").update({ winner, score }).eq("id", matchId);
+    loadData();
+  }
+  async function deleteMatch(matchId) {
+    await supabase.from("matches").delete().eq("id", matchId);
+    loadData();
+  }
+
   /* ----- saison active ----- */
   const season = seasons.find(s => s.status === "active") || seasons[seasons.length - 1] || { id: 1, short_name: "LEC", name: "LEC" };
   const seasonMatches = matches.filter(m => m.season_id === season.id || (!m.season_id && season.id === 1));
@@ -178,8 +208,12 @@ export default function App() {
           <Classement standings={standings} me={me} playerToken={playerToken} />
         )}
         {tab === "profil" && <Profil me={me} token={playerToken(me)} standings={standings} onLogout={logout} />}
+        {tab === "admin" && isAdmin && (
+          <Admin seasons={seasons} activeId={season.id} matches={enriched}
+            onCreateSeason={createSeason} onActivate={activateSeason} onAddMatch={addMatch} onSetResult={setResult} onDeleteMatch={deleteMatch} />
+        )}
       </div>
-      <Tabs tab={tab} setTab={setTab} />
+      <Tabs tab={tab} setTab={setTab} isAdmin={isAdmin} />
     </div>
   );
 }
@@ -500,8 +534,9 @@ function Profil({ me, token, standings, onLogout }) {
   );
 }
 
-function Tabs({ tab, setTab }) {
+function Tabs({ tab, setTab, isAdmin }) {
   const items = [["matchs", "🎮", "MATCHS"], ["classement", "🏆", "CLASSEMENT"], ["profil", "👤", "PROFIL"]];
+  if (isAdmin) items.push(["admin", "⚙️", "ADMIN"]);
   return (
     <div style={{ position: "fixed", bottom: 0, left: 0, right: 0, maxWidth: 480, margin: "0 auto", background: "rgba(6,6,14,.92)", borderTop: "1px solid " + C.bd, backdropFilter: "blur(8px)", display: "flex", padding: "8px 14px 14px" }}>
       {items.map(([id, ic, label]) => {
@@ -513,6 +548,109 @@ function Tabs({ tab, setTab }) {
           </button>
         );
       })}
+    </div>
+  );
+}
+
+/* ============================================================
+   PANNEAU ADMIN (proprietaire uniquement)
+   ============================================================ */
+
+function resultOptions(bo) {
+  return bo === 5 ? ["3-0", "3-1", "3-2", "2-3", "1-3", "0-3"] : ["2-0", "2-1", "1-2", "0-2"];
+}
+function winnerFromScore(sc, team1, team2) {
+  const p = sc.split("-").map(Number);
+  return p[0] > p[1] ? team1 : team2;
+}
+
+function Admin({ seasons, activeId, matches, onCreateSeason, onActivate, onAddMatch, onSetResult, onDeleteMatch }) {
+  const [sName, setSName] = useState("");
+  const [sShort, setSShort] = useState("");
+  const [f, setF] = useState({ team1: "", team2: "", bo: 5, cote1: "", cote2: "", week: 1, day: "", start: "" });
+  const up = (k, v) => setF(p => ({ ...p, [k]: v }));
+
+  const inS = { width: "100%", background: "#0a0a16", border: "1px solid " + C.bd, borderRadius: 8, padding: "10px 11px", color: C.tp, fontFamily: FB, fontSize: 14, marginTop: 5, boxSizing: "border-box" };
+  const lblS = { fontFamily: FD, fontSize: 10, letterSpacing: 1, color: C.td, display: "block", marginTop: 11 };
+  const cardS = { background: C.s1, border: "1px solid " + C.bd, borderRadius: 14, padding: 15, marginBottom: 14 };
+  const btnS = (bg, fg) => ({ background: bg, color: fg, border: "none", borderRadius: 8, padding: "11px 14px", fontFamily: FD, fontWeight: 700, fontSize: 12, letterSpacing: 1, cursor: "pointer" });
+
+  function submitMatch() {
+    if (!f.team1.trim() || !f.team2.trim() || !f.cote1 || !f.cote2) return;
+    onAddMatch({ season_id: activeId, team1: f.team1.trim(), team2: f.team2.trim(), bo: Number(f.bo), cote1: Number(f.cote1), cote2: Number(f.cote2), week: Number(f.week) || 1, day: f.day.trim(), start_time: f.start || null });
+    setF({ team1: "", team2: "", bo: Number(f.bo), cote1: "", cote2: "", week: Number(f.week) || 1, day: "", start: "" });
+  }
+
+  return (
+    <div style={{ paddingTop: 8 }}>
+      <datalist id="teamlist">{Object.keys(TEAMS).map(t => <option key={t} value={t} />)}</datalist>
+
+      <SectionTitle>COMPÉTITIONS</SectionTitle>
+      <div style={cardS}>
+        {seasons.map(s => (
+          <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 0", borderBottom: "1px solid #14142a" }}>
+            <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 14, flex: 1 }}>{s.name}</span>
+            {s.id === activeId
+              ? <span style={{ fontFamily: FD, fontSize: 10, color: C.n1, letterSpacing: 1, border: "1px solid " + C.n1, borderRadius: 4, padding: "2px 7px" }}>ACTIVE</span>
+              : <button onClick={() => onActivate(s.id)} style={btnS(C.s2, C.n1)}>ACTIVER</button>}
+          </div>
+        ))}
+        <div style={{ marginTop: 12 }}>
+          <label style={lblS}>NOUVELLE COMPÉTITION — NOM</label>
+          <input style={inS} value={sName} onChange={e => setSName(e.target.value)} placeholder="MSI 2026" />
+          <label style={lblS}>NOM COURT (affiché en haut)</label>
+          <input style={inS} value={sShort} onChange={e => setSShort(e.target.value)} placeholder="MSI 2026" />
+          <button onClick={() => { if (sName.trim()) { onCreateSeason(sName.trim(), (sShort || sName).trim()); setSName(""); setSShort(""); } }}
+            style={{ ...btnS(C.n2, "#06060e"), width: "100%", marginTop: 12 }}>CRÉER LA COMPÉTITION</button>
+          <div style={{ fontFamily: FB, fontSize: 11, color: C.td, marginTop: 8 }}>Après création, clique sur « Activer » pour qu'elle s'affiche dans l'app.</div>
+        </div>
+      </div>
+
+      <SectionTitle>AJOUTER UN MATCH</SectionTitle>
+      <div style={cardS}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ flex: 1 }}><label style={lblS}>ÉQUIPE 1</label><input list="teamlist" style={inS} value={f.team1} onChange={e => up("team1", e.target.value)} placeholder="G2 Esports" /></div>
+          <div style={{ flex: 1 }}><label style={lblS}>ÉQUIPE 2</label><input list="teamlist" style={inS} value={f.team2} onChange={e => up("team2", e.target.value)} placeholder="Top Esports" /></div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ flex: 1 }}><label style={lblS}>COTE ÉQ.1</label><input type="number" step="0.01" style={inS} value={f.cote1} onChange={e => up("cote1", e.target.value)} placeholder="2.10" /></div>
+          <div style={{ flex: 1 }}><label style={lblS}>COTE ÉQ.2</label><input type="number" step="0.01" style={inS} value={f.cote2} onChange={e => up("cote2", e.target.value)} placeholder="1.65" /></div>
+          <div style={{ width: 80 }}><label style={lblS}>FORMAT</label>
+            <select style={inS} value={f.bo} onChange={e => up("bo", e.target.value)}><option value={5}>Bo5</option><option value={3}>Bo3</option></select>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ width: 80 }}><label style={lblS}>TOUR</label><input type="number" style={inS} value={f.week} onChange={e => up("week", e.target.value)} /></div>
+          <div style={{ flex: 1 }}><label style={lblS}>JOUR (libellé)</label><input style={inS} value={f.day} onChange={e => up("day", e.target.value)} placeholder="VEN 03/07" /></div>
+        </div>
+        <label style={lblS}>DATE & HEURE DU MATCH (verrouille les pronos)</label>
+        <input type="datetime-local" style={inS} value={f.start} onChange={e => up("start", e.target.value)} />
+        <button onClick={submitMatch} style={{ ...btnS(C.n1, "#06060e"), width: "100%", marginTop: 14 }}>AJOUTER LE MATCH</button>
+      </div>
+
+      <SectionTitle>RÉSULTATS</SectionTitle>
+      <div style={cardS}>
+        {matches.length === 0 && <div style={{ fontFamily: FB, fontSize: 13, color: C.td }}>Aucun match dans la compétition active.</div>}
+        {matches.map(m => (
+          <div key={m.id} style={{ padding: "10px 0", borderBottom: "1px solid #14142a" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+              <span style={{ fontFamily: FD, fontWeight: 600, fontSize: 13 }}>{m.team1} <span style={{ color: C.td }}>vs</span> {m.team2}</span>
+              <button onClick={() => { if (confirm("Supprimer ce match ?")) onDeleteMatch(m.id); }} style={{ marginLeft: "auto", background: "none", border: "none", color: C.n3, cursor: "pointer", fontSize: 16 }}>✕</button>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {resultOptions(m.bo).map(sc => {
+                const sel = m.score === sc;
+                return (
+                  <button key={sc} onClick={() => onSetResult(m.id, winnerFromScore(sc, m.team1, m.team2), sc)}
+                    style={{ padding: "6px 10px", borderRadius: 6, fontFamily: FD, fontWeight: 700, fontSize: 12, cursor: "pointer",
+                      border: "1px solid " + (sel ? C.n1 : C.bd), background: sel ? C.n1 : "#0a0a16", color: sel ? "#06060e" : C.tp }}>{sc}</button>
+                );
+              })}
+              {m.winner && <button onClick={() => onSetResult(m.id, null, null)} style={{ padding: "6px 10px", borderRadius: 6, fontFamily: FD, fontWeight: 600, fontSize: 11, cursor: "pointer", border: "1px solid " + C.bd, background: "none", color: C.td }}>EFFACER</button>}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
